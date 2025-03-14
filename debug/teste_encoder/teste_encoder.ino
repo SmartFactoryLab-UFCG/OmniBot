@@ -1,5 +1,6 @@
-#include "TimerOne.h"
+// Implement the velocity estimation for one motor using Quadracture Encoder
 
+// ------------------- DC MOTOR -------------------
 class DCMotor {  
   int spd = 255, pin1, pin2;
   
