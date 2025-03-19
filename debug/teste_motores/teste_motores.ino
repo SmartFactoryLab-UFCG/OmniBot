@@ -10,7 +10,7 @@ class DCMotor {
   
     void Pinout(int in1, int in2){ // Pinout é o método para a declaração dos pinos que vão controlar o objeto motor
       pin1 = in1;
-      pin2 = in2;git 
+      pin2 = in2; 
       pinMode(pin1, OUTPUT);
       pinMode(pin2, OUTPUT);
       }   
@@ -48,9 +48,9 @@ void setup() {
 void loop() {
 
   // Setar velocidade do motor
-  Motor1.Speed(200); 
-  Motor2.Speed(200);
-  Motor3.Speed(200);
+  Motor1.Speed(255); 
+  Motor2.Speed(255);
+  Motor3.Speed(255);
   // Motor girando para frente indefinidamente
   Motor1.Forward();
   Motor2.Forward(); 

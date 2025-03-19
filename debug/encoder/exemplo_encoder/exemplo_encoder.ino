@@ -1,11 +1,39 @@
 #include <util/atomic.h>
 
+class DCMotor {  
+  int spd = 255, pin1, pin2;
+  
+  public:  
+  
+    void Pinout(int in1, int in2){ // Pinout é o método para a declaração dos pinos que vão controlar o objeto motor
+      pin1 = in1;
+      pin2 = in2;
+      pinMode(pin1, OUTPUT);
+      pinMode(pin2, OUTPUT);
+      }   
+    void Speed(int in1){ // Speed é o método que irá ser responsável por salvar a velocidade de atuação do motor
+      spd = in1;
+      }     
+    void Forward(){ // Forward é o método para fazer o motor girar para frente
+      analogWrite(pin1, spd);
+      digitalWrite(pin2, LOW);
+      }   
+    void Backward(){ // Backward é o método para fazer o motor girar para trás
+      digitalWrite(pin1, LOW);
+      analogWrite(pin2, spd);
+      }
+    void Stop(){ // Stop é o metodo para fazer o motor ficar parado.
+      digitalWrite(pin1, LOW);
+      digitalWrite(pin2, LOW);
+      }
+   };
+
+
+DCMotor Motor1;
+
 // Pins
 #define ENCA 2
 #define ENCB 3
-#define PWM 5
-#define IN1 6
-#define IN2 7
 
 // globals
 long prevT = 0;
@@ -21,16 +49,16 @@ float v1Prev = 0;
 float v2Filt = 0;
 float v2Prev = 0;
 
-float eintegral = 0;
+// float eintegral = 0;
 
 void setup() {
   Serial.begin(115200);
 
   pinMode(ENCA,INPUT);
   pinMode(ENCB,INPUT);
-  pinMode(PWM,OUTPUT);
-  pinMode(IN1,OUTPUT);
-  pinMode(IN2,OUTPUT);
+
+  // Setup Motors
+  Motor1.Pinout(4, 5);
 
   attachInterrupt(digitalPinToInterrupt(ENCA),
                   readEncoder,RISING);
@@ -55,8 +83,8 @@ void loop() {
   prevT = currT;
 
   // Convert count/s to RPM
-  float v1 = velocity1/600.0*60.0;
-  float v2 = velocity2/600.0*60.0;
+  float v1 = velocity1/676.0*60.0;
+  float v2 = velocity2/676.0*60.0;
 
   // Low-pass filter (25 Hz cutoff)
   v1Filt = 0.854*v1Filt + 0.0728*v1 + 0.0728*v1Prev;
@@ -64,31 +92,13 @@ void loop() {
   v2Filt = 0.854*v2Filt + 0.0728*v2 + 0.0728*v2Prev;
   v2Prev = v2;
 
-  // Set a target
-  float vt = 100*(sin(currT/1e6)>0);
 
-  // Compute the control signal u
-  float kp = 5;
-  float ki = 10;
-  float e = vt-v1Filt;
-  eintegral = eintegral + e*deltaT;
-  
-  float u = kp*e + ki*eintegral;
+  Motor1.Speed(255); // Máxima velocidade
+  Motor1.Forward(); // Comando para o motor ir para frente
 
-  // Set the motor speed and direction
-  int dir = 1;
-  if (u<0){
-    dir = -1;
-  }
-  int pwr = (int) fabs(u);
-  if(pwr > 255){
-    pwr = 255;
-  }
-  setMotor(dir,pwr,PWM,IN1,IN2);
-
-  Serial.print(vt);
-  Serial.print(" ");
   Serial.print(v1Filt);
+  Serial.print(" ");
+  Serial.print(v2Filt);
   Serial.println();
   delay(1);
 }

@@ -33,10 +33,8 @@ class DCMotor {
 DCMotor Motor1;
 
 
-
-
-#define ENCODER_1_A 21 // Yellow	encoder A output
-#define ENCODER_1_B 20 // White	encoder B output
+#define ENCODER_1_A 2 // Yellow	encoder A output
+#define ENCODER_1_B 3 // White	encoder B output
 
 
 volatile long totalPulses_1 = 0;
@@ -63,7 +61,7 @@ int interval = 1000; //  interval in ms
 int countsPerRevolutation = 52*13;
 long previousMillis = 0;
 long currentMillis = 0;
-int rpm_2 = 0;
+int rpm_1 = 0;
 
 // -------------------SETUP -------------------
 
@@ -75,12 +73,11 @@ void setup() {
   Motor1.Pinout(4, 5);
 
   // Setupt encoders
-  pinMode(ENCODER_2_A, INPUT);
-  pinMode(ENCODER_2_B, INPUT);
+  pinMode(ENCODER_1_A, INPUT);
+  pinMode(ENCODER_1_B, INPUT);
 
   // Interrupçao dos encoders
-  attachInterrupt(digitalPinToInterrupt(ENCODER_2_A),countPulses_2, RISING);
-  totalPulses_2 = 0;
+  attachInterrupt(digitalPinToInterrupt(ENCODER_1_A),countPulses_1, RISING);
   previousMillis = millis();
 }
 
@@ -94,25 +91,17 @@ void loop() {
     previousMillis = currentMillis;
     
     // Revolutions per minute (RPM) = (total encoder pulse in 1s / encoder ppr) x 60s
-    rpm_2 = (float)(totalPulses_1 * 60 / countsPerRevolutation);
+    rpm_1 = (float)(totalPulses_1 * 60 / countsPerRevolutation);
 
     // Only update display when there have readings
-    if ( rpm_2 > 0) 
+    if ( rpm_1 > 0) 
     {
-      Serial.print(totalPulses_1);
-      Serial.print(" pulse / ");
-      Serial.print(countsPerRevolutation);
-      Serial.print(" pulse per rotation x 60 seconds = ");
-      Serial.print(rpm_2);
+      Serial.print(rpm_1);
       Serial.println(" RPM");
     }
     else
     {
-      Serial.print(totalPulses_1);
-      Serial.print(" pulse / ");
-      Serial.print(countsPerRevolutation);
-      Serial.print(" pulse per rotation x 60 seconds = ");
-      Serial.print(rpm_2);
+      Serial.print(rpm_1);
       Serial.println(" RPM");
     }
     totalPulses_1 = 0;
