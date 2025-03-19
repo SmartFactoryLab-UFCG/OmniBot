@@ -38,8 +38,7 @@ DCMotor Motor1;
 // globals
 long prevT = 0;
 int posPrev = 0;
-// Use the "volatile" directive for variables
-// used in an interrupt
+// Use the "volatile" directive for variables used in an interrupt
 volatile int pos_i = 0;
 volatile float velocity_i = 0;
 volatile long prevT_i = 0;
@@ -58,7 +57,7 @@ void setup() {
   pinMode(ENCB,INPUT);
 
   // Setup Motors
-  Motor1.Pinout(4, 5);
+  Motor1.Pinout(12,13);
 
   attachInterrupt(digitalPinToInterrupt(ENCA),
                   readEncoder,RISING);
