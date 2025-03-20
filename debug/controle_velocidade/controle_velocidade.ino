@@ -51,6 +51,9 @@ volatile int pos_i_1 = 0;
 float v1Filt = 0;
 float v1Prev = 0;
 
+// Variables used in PI Control
+float eintegral = 0;
+
 void setup() {
   // Initialize serial communication
   Serial.begin(115200);
@@ -96,13 +99,45 @@ void loop() {
   v1Filt = 0.854*v1Filt + 0.0728*v1 + 0.0728*v1Prev;
   v1Prev = v1;
 
+  // ---------- Velocity Control ----------
+    // Set a target
+  float vt = 100*(sin(currT/1e6));
+
+  // Compute the control signal u
+  float kp = 20;
+  float ki = 15;
+
+  float e = vt-v1Filt;
+  eintegral = eintegral + e*deltaT;
+
+  float u = kp*e + ki*eintegral;
+
+  // Set the motor speed and direction
+
+  int pwr = (int) fabs(u);
+  if(pwr > 255){
+    pwr = 255;
+  }
+
   // Setup motor velocity with pwm
-  Motor1.Speed(255); 
+  Motor1.Speed(pwr); 
 
-  // Motor moving forward
-  Motor1.Forward();
-
+  if(u > 0){
+    // Motor moving forward
+    Motor1.Forward();
+  }
+  else{
+    // Motor moving forward
+    Motor1.Backward();
+  }
+  
+  Serial.print(100);
+  Serial.print(" ");
+  Serial.print(-100);
+  Serial.print(" ");
   Serial.print(v1Filt);
+  Serial.print(" ");
+  Serial.print(vt);
   Serial.println();
   delay(1);
 
