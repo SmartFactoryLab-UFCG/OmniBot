@@ -55,3 +55,6 @@ for i = 1:length(ia)
     end
 end
 
+%% Função identificada
+
+Gz = tf_1ordem
