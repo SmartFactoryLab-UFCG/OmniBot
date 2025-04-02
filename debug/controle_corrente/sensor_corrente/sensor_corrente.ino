@@ -117,23 +117,30 @@ void loop() {
   v2Filt = 0.854*v2Filt + 0.0728*v2 + 0.0728*v2Prev;
   v2Prev = v2;
 
+  if (v2Filt < 7){
+    v2Filt = 0;
+  } 
+
   unsigned long currentTime = millis();
-  // Verifica se é hora de alternar o estado do motor
-  if (currentTime - previousTime >= PERIOD) {
-    previousTime = currentTime; // Reseta o contador de tempo
+  // // Verifica se é hora de alternar o estado do motor
+  // if (currentTime - previousTime >= PERIOD) {
+  //   previousTime = currentTime; // Reseta o contador de tempo
     
-    if (isMotorOn) {
-      // Desliga o motor
-      Motor1.Speed(0);
-      Motor1.Forward();
-    } else {
-      // Liga motor
+  //   if (isMotorOn) {
+  //     // Desliga o motor
+  //     Motor1.Speed(0);
+  //     Motor1.Forward();
+  //   } else {
+  //     // Liga motor
+  //     Motor1.Speed(255); // Máxima velocidade
+  //     Motor1.Forward(); // Comando para o motor ir para frente
+  //   }
+    
+  //   isMotorOn = !isMotorOn; // Inverte o estado
+  // }
+
       Motor1.Speed(255); // Máxima velocidade
       Motor1.Forward(); // Comando para o motor ir para frente
-    }
-    
-    isMotorOn = !isMotorOn; // Inverte o estado
-  }
 
   float current = readCurrentACS712();
   
@@ -143,7 +150,7 @@ void loop() {
   // Serial.print(-0.5);
   // Serial.print(" ");
   Serial.print(current, 3); // 3 casas decimais
-  //Serial.print(" A ");
+  //Serial.print(" ");
   //Serial.print(v2Filt);
   Serial.println();
   delay(1);

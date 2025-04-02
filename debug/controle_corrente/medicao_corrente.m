@@ -1,11 +1,11 @@
 % Medição do sensor de corrente, quando aplicado um degrau de tensão 
-ia = importdata("degrau_tensao_roda.txt");
-
+ia = importdata("stall_current_10v.txt");
+ia = ia(5418:6745);
 figure(1)
 plot(ia)
 title("Medição da corrente de armadura quando aplicado um degrau de tensão");
 
-%% Análise da frequência
+%% Análise da frequênciahttps://drive.google.com/drive/u/0/
 
 Ts = 0.0058;
 fs = 1/Ts;
@@ -13,6 +13,8 @@ n = length(ia);
 f = fs * (0:(n/2)) / n;
 Y = fft(ia);
 P = abs(Y / n).^2;
+
+figure(2)
 plot(f, P(1:n/2+1));
 xlabel('Frequência (Hz)');
 ylabel('Potência');
@@ -20,12 +22,13 @@ title('Espectro de Frequência do Sinal');
 
 %% Projeto filtro passa-baixas
 
-fc = 5; % Frequência de corte (ajuste conforme a dinâmica do motor)
+fc = 2; % Frequência de corte (ajuste conforme a dinâmica do motor)
 [b, a] = butter(4, fc / (fs / 2), 'low'); % Filtro Butterworth de 4ª ordem
 filteredCurrent = filtfilt(b, a, ia); % Filtragem bidirecional (sem atraso)
 
 tempo = (0:length(ia)-1)*Ts;
 
+figure(3)
 plot(tempo, ia, 'b', tempo, filteredCurrent, 'r', 'LineWidth', 1.0);
 xlabel('Tempo (s)');
 ylabel('Corrente (A)');
@@ -54,7 +57,3 @@ for i = 1:length(ia)
         end
     end
 end
-
-%% Função identificada
-
-Gz = tf_1ordem
