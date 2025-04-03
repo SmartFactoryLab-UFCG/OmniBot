@@ -32,8 +32,8 @@ class DCMotor {
 DCMotor Motor1;
 
 // Pins
-#define ENCA 2
-#define ENCB 3
+#define ENCA 21
+#define ENCB 20
 // 5A - 185mV/A
 // 20A - 100mV/A
 // 30A - 66mV/A
@@ -61,9 +61,9 @@ volatile long prevT_i = 0;
 float v1Filt = 0;
 float v1Prev = 0;
 float v2Filt = 0;
-float v2Prev = 0;
+float v2Prev = 0;5
 
-const unsigned long PERIOD = 3000; // Período de 5 segundos (5000ms)
+const unsigned long PERIOD = 5000; // Período de 5 segundos (5000ms)
 
 // Variáveis para controle de tempo
 unsigned long previousTime = 0;
@@ -82,7 +82,7 @@ void setup() {
   calibrateZeroCurrent();   // Calibração inicial
 
   // Setup Motors
-  Motor1.Pinout(12,13);
+  Motor1.Pinout(8,9);
 
   attachInterrupt(digitalPinToInterrupt(ENCA),
                   readEncoder,RISING);
@@ -123,24 +123,24 @@ void loop() {
 
   unsigned long currentTime = millis();
   // // Verifica se é hora de alternar o estado do motor
-  // if (currentTime - previousTime >= PERIOD) {
-  //   previousTime = currentTime; // Reseta o contador de tempo
+  if (currentTime - previousTime >= PERIOD) {
+    previousTime = currentTime; // Reseta o contador de tempo
     
-  //   if (isMotorOn) {
-  //     // Desliga o motor
-  //     Motor1.Speed(0);
-  //     Motor1.Forward();
-  //   } else {
-  //     // Liga motor
-  //     Motor1.Speed(255); // Máxima velocidade
-  //     Motor1.Forward(); // Comando para o motor ir para frente
-  //   }
-    
-  //   isMotorOn = !isMotorOn; // Inverte o estado
-  // }
-
+    if (isMotorOn) {
+      // Desliga o motor
+      Motor1.Speed(0);
+      Motor1.Forward();
+    } else {
+      // Liga motor
       Motor1.Speed(255); // Máxima velocidade
       Motor1.Forward(); // Comando para o motor ir para frente
+    }
+    
+    isMotorOn = !isMotorOn; // Inverte o estado
+  }
+
+      // Motor1.Speed(255); // Máxima velocidade
+      // Motor1.Forward(); // Comando para o motor ir para frente
 
   float current = readCurrentACS712();
   
@@ -150,8 +150,8 @@ void loop() {
   // Serial.print(-0.5);
   // Serial.print(" ");
   Serial.print(current, 3); // 3 casas decimais
-  //Serial.print(" ");
-  //Serial.print(v2Filt);
+  Serial.print(" ");
+  Serial.print(v2Filt);
   Serial.println();
   delay(1);
 
@@ -204,7 +204,7 @@ float readCurrentACS712() {
   int rawValue = analogRead(ACS712_PIN);
   float voltage = (rawValue * VOLTAGE_REF) / ADC_RESOLUTION;
   float current = (voltage - (VOLTAGE_REF / 2) - zeroCurrentOffset) / ACS712_SENSITIVITY;
-  return current;
+  return -current;
 }
 
 // Função para ler corrente com filtro de média móvel

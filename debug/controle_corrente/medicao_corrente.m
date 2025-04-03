@@ -1,11 +1,10 @@
 % Medição do sensor de corrente, quando aplicado um degrau de tensão 
-ia = importdata("stall_current_10v.txt");
-ia = ia(5418:6745);
+ia = importdata("experiments_m3\rotor_travado_degraus_7v_2.txt"); ia = ia(1:1627);
 figure(1)
 plot(ia)
 title("Medição da corrente de armadura quando aplicado um degrau de tensão");
 
-%% Análise da frequênciahttps://drive.google.com/drive/u/0/
+%% Análise da frequência
 
 Ts = 0.0058;
 fs = 1/Ts;
@@ -21,8 +20,7 @@ ylabel('Potência');
 title('Espectro de Frequência do Sinal');
 
 %% Projeto filtro passa-baixas
-
-fc = 2; % Frequência de corte (ajuste conforme a dinâmica do motor)
+fc = 3; % Frequência de corte (ajuste conforme a dinâmica do motor)
 [b, a] = butter(4, fc / (fs / 2), 'low'); % Filtro Butterworth de 4ª ordem
 filteredCurrent = filtfilt(b, a, ia); % Filtragem bidirecional (sem atraso)
 
@@ -37,9 +35,9 @@ grid on;
 
 %% Tensão
 % Parâmetros do sistema
-amplitude = 12; % Tensão máxima (12V)
-limite_superior = 0.5; % Aciona 12V se Ia > 0.5A
-limite_inferior = -0.5; % Aciona 0V se Ia < -0.5A
+amplitude = 7; % Tensão máxima (12V)
+limite_superior = 0.3; % Aciona 12V se Ia > 0.5A
+limite_inferior = 0.01; % Aciona 0V se Ia < -0.5A
 
 % Inicializa o vetor de tensão
 Vout = zeros(size(ia));

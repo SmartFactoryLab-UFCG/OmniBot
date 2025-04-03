@@ -1,6 +1,10 @@
-data = importdata("corrente_x_velocidade.txt");
+data = importdata("experiments_m3\rotor_sem_roda_degraus_7v_1_exc.txt");
 ia_wm = data(:,1);
-wm = data(:,2);
+wm = data(:,2) * 75;
+
+% wm no load = 168 rpm
+
+plot(wm)
 
 Ts = 0.0058; %ms
 
