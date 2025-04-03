@@ -31,6 +31,3 @@ for i = 1:length(ia_wm)
 end
 
 % time vector
-Ts = 0.0058;
-tempo_wm = (0:length(wm)-1)'*Ts; 
-tempo_va = (0:length(Vout_wm)-1)'*Ts;
