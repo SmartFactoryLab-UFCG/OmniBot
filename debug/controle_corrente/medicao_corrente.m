@@ -1,5 +1,5 @@
 % Medição do sensor de corrente, quando aplicado um degrau de tensão 
-ia = importdata("experiments_m3\rotor_travado_degraus_7v_2.txt"); ia = ia(1:1627);
+ia = importdata("experiments_m3\rotor_sem_roda_degraus_7v_1_exc.txt"); ia = ia(1:4242,1);
 figure(1)
 plot(ia)
 title("Medição da corrente de armadura quando aplicado um degrau de tensão");
@@ -55,3 +55,7 @@ for i = 1:length(ia)
         end
     end
 end
+
+
+tempo_va = (0:length(Vout)-1)'*Ts;
+tempo_ia = (0:length(ia)-1)'*Ts;

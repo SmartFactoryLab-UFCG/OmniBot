@@ -6,10 +6,34 @@ wm = data(:,2) * 75;
 
 plot(wm)
 
-Ts = 0.0058; %ms
-
 Kt = 0.392; % N.m/A
 ce = ia_wm * Kt;
+
+Ts = 0.0058;
+fs = 1/Ts;
+n = length(ia);
+f = fs * (0:(n/2)) / n;
+Y = fft(ia);
+P = abs(Y / n).^2;
+
+figure(2)
+plot(f, P(1:n/2+1));
+xlabel('Frequência (Hz)');
+ylabel('Potência');
+title('Espectro de Frequência do Sinal');
+
+fc = 3; % Frequência de corte (ajuste conforme a dinâmica do motor)
+[b, a] = butter(4, fc / (fs / 2), 'low'); % Filtro Butterworth de 4ª ordem
+filteredCurrent = filtfilt(b, a, ia); % Filtragem bidirecional (sem atraso)
+
+tempo = (0:length(ia)-1)*Ts;
+
+figure(3)
+plot(tempo, ia, 'b', tempo, filteredCurrent, 'r', 'LineWidth', 1.0);
+xlabel('Tempo (s)');
+ylabel('Corrente (A)');
+legend('Sinal Bruto', 'Sinal Filtrado');
+grid on;
 
 %% Tensão
 % Parâmetros do sistema

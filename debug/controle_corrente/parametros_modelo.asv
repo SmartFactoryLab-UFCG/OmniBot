@@ -1,7 +1,6 @@
-KT = 0.0684;
-KM = 31.495;
+KT = 0.00090184;
 La = 0.00822;
-J = 0.1;    
+J = 0.1;
 Ra = 13.9622;
 F = 0.1;
 
@@ -11,7 +10,7 @@ data_wm = importdata('experiments_m3\rotor_sem_roda_degraus_7v_1_exc.txt');
 %data_ia = importdata("experiments\degrau_tensao_7V.txt");
 %ia = data_ia(350:end)-0.033;
 ia_wm = data_wm(1:4180,1);
-wm = data_wm(1:4180,2);
+wm = data_wm(1:4180,2) * 75;
 
 % Parâmetros da tensão
 amplitude = 7; % Tensão máxima (12V)
@@ -54,7 +53,7 @@ Ts = 0.0058;
 fs = 1/Ts;
 n = length(ia_wm);
 f = fs * (0:(n/2)) / n;
-Y = fft(ia_wm);
+Y = fft(ia);
 P = abs(Y / n).^2;
 
 figure(2)
@@ -65,12 +64,12 @@ title('Espectro de Frequência do Sinal');
 
 fc = 3; % Frequência de corte (ajuste conforme a dinâmica do motor)
 [b, a] = butter(4, fc / (fs / 2), 'low'); % Filtro Butterworth de 4ª ordem
-filteredCurrent = filtfilt(b, a, ia_wm); % Filtragem bidirecional (sem atraso)
+filteredCurrent = filtfilt(b, a, ia); % Filtragem bidirecional (sem atraso)
 
-tempo = (0:length(ia_wm)-1)*Ts;
+tempo = (0:length(ia)-1)*Ts;
 
 figure(3)
-plot(tempo, ia_wm, 'b', tempo, filteredCurrent, 'r', 'LineWidth', 1.0);
+plot(tempo, ia, 'b', tempo, filteredCurrent, 'r', 'LineWidth', 1.0);
 xlabel('Tempo (s)');
 ylabel('Corrente (A)');
 legend('Sinal Bruto', 'Sinal Filtrado');
