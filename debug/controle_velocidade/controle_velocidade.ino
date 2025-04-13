@@ -100,7 +100,7 @@ void loop() {
   v1Prev = v1;
 
   // ---------- Velocity Control ----------
-    // Set a target
+  // Set a target
   float vt = 100*(sin(currT/1e6));
 
   // Compute the control signal u

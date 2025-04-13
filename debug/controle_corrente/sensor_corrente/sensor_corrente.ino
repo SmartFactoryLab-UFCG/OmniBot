@@ -61,7 +61,9 @@ volatile long prevT_i = 0;
 float v1Filt = 0;
 float v1Prev = 0;
 float v2Filt = 0;
-float v2Prev = 0;5
+float v2Prev = 0;
+
+
 
 const unsigned long PERIOD = 5000; // Período de 5 segundos (5000ms)
 

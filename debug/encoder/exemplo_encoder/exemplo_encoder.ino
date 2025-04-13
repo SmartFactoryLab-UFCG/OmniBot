@@ -36,6 +36,7 @@ DCMotor Motor1;
 #define ENCB 3
 
 // globals
+long prevClock;
 long prevT = 0;
 int posPrev = 0;
 // Use the "volatile" directive for variables used in an interrupt
@@ -65,6 +66,9 @@ void setup() {
 
 void loop() {
 
+  long clock = micros();
+  long ts = (clock-prevClock);
+  prevClock = clock;
   // read the position in an atomic block
   // to avoid potential misreads
   int pos = 0;
@@ -76,49 +80,31 @@ void loop() {
 
   // Compute velocity with method 1
   long currT = micros();
-  float deltaT = ((float) (currT-prevT))/1.0e6;
-  float velocity1 = (pos - posPrev)/deltaT;
-  posPrev = pos;
+  long deltaT = ((float) (currT-prevT))/1.0e6;
+  //float velocity1 = (pos - posPrev)/deltaT;
+  //posPrev = pos;
   prevT = currT;
 
   // Convert count/s to RPM
-  float v1 = velocity1/676.0*60.0;
+  //float v1 = velocity1/676.0*60.0;
   float v2 = velocity2/676.0*60.0;
 
   // Low-pass filter (25 Hz cutoff)
-  v1Filt = 0.854*v1Filt + 0.0728*v1 + 0.0728*v1Prev;
-  v1Prev = v1;
+  //v1Filt = 0.854*v1Filt + 0.0728*v1 + 0.0728*v1Prev;
+  //v1Prev = v1;
   v2Filt = 0.854*v2Filt + 0.0728*v2 + 0.0728*v2Prev;
   v2Prev = v2;
 
 
-  Motor1.Speed(255); // Máxima velocidade
-  Motor1.Forward(); // Comando para o motor ir para frente
+  //Motor1.Speed(255); // Máxima velocidade
+  //Motor1.Forward(); // Comando para o motor ir para frente
 
-  Serial.print(v1Filt);
-  Serial.print(" ");
-  Serial.print(v2Filt);
-  Serial.println();
+  //Serial.print(v1Filt);
+  //Serial.print(" ");
+  //Serial.println(v2Filt);
+  Serial.println(ts);
+  //Serial.println();
   delay(1);
-}
-
-void setMotor(int dir, int pwmVal, int pwm, int in1, int in2){
-  analogWrite(pwm,pwmVal); // Motor speed
-  if(dir == 1){ 
-    // Turn one way
-    digitalWrite(in1,HIGH);
-    digitalWrite(in2,LOW);
-  }
-  else if(dir == -1){
-    // Turn the other way
-    digitalWrite(in1,LOW);
-    digitalWrite(in2,HIGH);
-  }
-  else{
-    // Or dont turn
-    digitalWrite(in1,LOW);
-    digitalWrite(in2,LOW);    
-  }
 }
 
 void readEncoder(){
@@ -133,7 +119,7 @@ void readEncoder(){
     // Otherwise, increment backward
     increment = -1;
   }
-  pos_i = pos_i + increment;
+  //pos_i = pos_i + increment;
 
   // Compute velocity with method 2
   long currT = micros();
