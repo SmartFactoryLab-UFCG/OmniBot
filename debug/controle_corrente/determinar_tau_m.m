@@ -32,3 +32,4 @@ J = taum_desacelerando * B;
 % Ke = 0.4473;
 % J = 0.0016;
 % B = 0.0039;
+% Ts = 0.01;
