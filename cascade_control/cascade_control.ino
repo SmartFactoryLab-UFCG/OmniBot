@@ -37,8 +37,8 @@ class DCMotor {
 DCMotor Motor3;
 
 // Definir Pinos Encoder
-#define ENCA 21
-#define ENCB 20
+#define ENCA 3
+#define ENCB 2
 
 // Definir configurações sensor de corrente
 const int ACS712_PIN = A0;       // Pino analógico conectado ao sensor
@@ -65,18 +65,18 @@ float integral_cur = 0.0;       // Termo integral corrente
 float prev_error_vel = 0.0;     // Erro anterior velocidade
 float prev_error_cur = 0.0;     // Erro anterior corrente
 // Controlador de Velocidade (PI)
-float Kp_vel = 13.60;         // Ganho proporcional
-float Ki_vel = 2.564;          // Ganho integral
-float vel_ref = 80.0;           // Velocidade de referência (RPM)
-float vel_max = 150.0;          // Velocidade máxima (RPM)
-float vel_min = -150.0;         // Velocidade mínima (RPM)
+float Kp_vel = 0.00023;         // Ganho proporcional
+float Ki_vel = 0.00056;          // Ganho integral
+float vel_ref = 65.0;           // Velocidade de referência (RPM)
+float vel_max = 120.0;          // Velocidade máxima (RPM)
+float vel_min = -120.0;         // Velocidade mínima (RPM)
 // Controlador de Corrente (PI)
-float Kp_cur = 8.23420;         // Ganho proporcional
-float Ki_cur = 1.398632441;     // Ganho integral
-float cur_max = 1.0;            // Limite superior anti-windup (A)
-float cur_min = -1.0;           // Limite inferior anti-windup (A)
-float volt_max = 7.0;          // Tensão máxima (V)
-float volt_min = -7.0;         // Tensão mínima (V)
+float Kp_cur = 0.387;         // Ganho proporcional
+float Ki_cur = 16.6818;     // Ganho integral
+float cur_max = 2.0;            // Limite superior anti-windup (A)
+float cur_min = -2.0;           // Limite inferior anti-windup (A)
+float volt_max = 6;          // Tensão máxima (V)
+float volt_min = -6;         // Tensão mínima (V)
 
 void setup() {
   // put your setup code here, to run once:
@@ -90,7 +90,7 @@ void setup() {
   calibrateZeroCurrent();   // Calibração inicial
 
   // Setup Motors
-  Motor3.Pinout(8,9);
+  Motor3.Pinout(6,7);
 
   attachInterrupt(digitalPinToInterrupt(ENCA),readEncoder,RISING);
 }
@@ -118,21 +118,18 @@ void loop() {
   v2Filt = 0.854*v2Filt + 0.0728*v2 + 0.0728*v2Prev;
   v2Prev = v2;
 
-  if (v2Filt < 7){
-    v2Filt = 0;
-  } 
+  // if (v2Filt < 7){
+  //   v2Filt = 0;
+  // } 
 
   float current = readCurrentACS712();
-
-  // Set a target
-  float w_ref = 60;
 
 // =============================================
 // CONTROLE EM CASCATA
 // =============================================
 
   // Malha externa (velocidade)
-  float current_ref = velocityController(w_ref, v2Filt, deltaT);
+  float current_ref = velocityController(vel_ref, v2Filt, deltaT);
   
   // Malha interna (corrente)
   float voltage_ref = currentController(current_ref, current, deltaT);
@@ -145,6 +142,7 @@ void loop() {
     pwr = 255;
   }
   // Setup motor velocity with pwm
+  
   Motor3.Speed(pwr); 
 
   if(pwmOutput > 0){
@@ -227,7 +225,7 @@ float velocityController(float ref, float meas, float deltaT) {
   float output = P + integral_vel;
   
   // Saturação da saída - Limite anti-windup (1 a -1 A como especificado)
-  output = constrain(output, cur_min, cur_max);
+  //output = constrain(output, cur_min, cur_max);
   
   return output;
 }
@@ -248,17 +246,17 @@ float currentController(float ref, float meas, float deltaT) {
   float output = P + integral_cur;
   
   // Saturação da saída
-  output = constrain(output, volt_min, volt_max);
+  //output = constrain(output, volt_min, volt_max);
   
   return output;
 }
 
 int voltageToPWM(float voltage) {
   // Limitar tensão aos limites do driver
-  voltage = constrain(voltage, -12.0, 12.0);
+  voltage = constrain(voltage, -6, 6);
   
   // Converter para PWM
-  int pwmValue = (int)((voltage / 12.0) * 255.0);
+  int pwmValue = (int)((voltage / 6.0) * 255.0);
 
   return pwmValue;
 }

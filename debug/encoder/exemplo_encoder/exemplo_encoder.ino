@@ -101,8 +101,8 @@ void loop() {
 
   //Serial.print(v1Filt);
   //Serial.print(" ");
-  //Serial.println(v2Filt);
-  Serial.println(ts);
+  Serial.println(v2Filt);
+  //Serial.println(ts);
   //Serial.println();
   delay(1);
 }
