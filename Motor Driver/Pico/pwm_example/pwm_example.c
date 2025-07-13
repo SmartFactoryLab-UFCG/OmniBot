@@ -1,33 +1,24 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "pico/stdlib.h"
 #include "hardware/pwm.h"
 #include "hardware/gpio.h"
 #include "hardware/timer.h"
 
-// ============= GPIO PINS =============
-
-#define PWM_PIN 8      // ENA
-#define IN1_PIN 10     // IN1
-#define IN2_PIN 11     // IN2
-#define ENC1_A 2       // ENCODER 1 - A
-#define ENC1_B 3       // ENCODER 1 - B
-
 // ============= PID =============
 
-#define SETPOINT 60
+// Inicialmente, considerar que todos os motores são iguais. 
+// Por isso, possuem as mesmas constantes.
 #define KP 18
-#define KI 15
+#define KI 16
 #define KD 0
 
 typedef struct {
     float Kp, Ki, Kd;
     float setpoint;
-
     float integral;
     float previous_error;
-
     float output_min, output_max;
-
     uint64_t last_time_us;
 } PIDController;
 
@@ -75,7 +66,6 @@ float pid_compute(PIDController* pid, float measured_value) {
 // ============= ENCODER =============
 
 typedef struct {
-    // Configuração
     uint pinA;
     uint pinB;
     volatile float velocity;
@@ -84,29 +74,17 @@ typedef struct {
 
 } Encoder;
 
-// Inicialização do encoder em pinos 2 (A) e 3 (B)
-Encoder encoder1 = {ENC1_A, ENC1_B, 0.0, 0, 0};
+// Inicialização dos Encoders
+#define ENC1_A 15     
+#define ENC1_B 14     
+#define ENC2_A 13 
+#define ENC2_B 12
+#define ENC3_A 11
+#define ENC3_B 10
 
-// Função de callback para interrupção do canal A
-void gpio_callback(uint gpio, uint32_t events) {
-    if (gpio != encoder1.pinA) return;
-
-    bool a = gpio_get(encoder1.pinA);
-    bool b = gpio_get(encoder1.pinB);
-
-    int8_t direction = (a ^ b) ? +1 : -1;
-    encoder1.direction = direction;
-
-    uint64_t now = time_us_64();
-    uint64_t delta_us = now - encoder1.last_pulse_time_us;
-
-    if (encoder1.last_pulse_time_us != 0 && delta_us > 0) {
-        // Fator 0.08875 depende do número de pulsos por rotação
-        encoder1.velocity = (1e6 / (float)delta_us) * 0.08875f * direction;
-    }
-
-    encoder1.last_pulse_time_us = now;    
-}
+Encoder encoder1 = {ENC1_A, ENC1_B, 0, 0, 0};
+Encoder encoder2 = {ENC2_A, ENC2_B, 0, 0, 0};
+Encoder encoder3 = {ENC3_A, ENC3_B, 0, 0, 0};
 
 // Configuração dos pinos do encoder
 void setup_encoder(Encoder* enc) {
@@ -121,64 +99,158 @@ void setup_encoder(Encoder* enc) {
     gpio_set_irq_enabled(enc->pinA, GPIO_IRQ_EDGE_RISE, true);
 }
 
+// Função de callback para interrupção do canal A
+void gpio_callback(uint gpio, uint32_t events) {
+    Encoder* encoder = NULL;
+
+    if      (gpio == encoder1.pinA) encoder = &encoder1;
+    else if (gpio == encoder2.pinA) encoder = &encoder2;
+    else if (gpio == encoder3.pinA) encoder = &encoder3;  
+
+    if (!encoder) return;
+
+    bool a = gpio_get(encoder->pinA);
+    bool b = gpio_get(encoder->pinB);
+
+    int8_t direction = (a ^ b) ? +1 : -1;
+    encoder->direction = direction;
+
+    uint64_t now = time_us_64();
+    uint64_t delta_us = now - encoder->last_pulse_time_us;
+
+    if (encoder->last_pulse_time_us != 0 && delta_us > 0) {
+        // Fator 0.08875 depende do número de pulsos por rotação
+        encoder->velocity = (1e6 / (float)delta_us) * 0.08875f * direction;
+    }
+
+    encoder->last_pulse_time_us = now;    
+}
+
+// ============= MOTOR GPIO PINS =============
+
+typedef struct {
+    int EN;
+    int IN1;
+    int IN2;
+} Motor;
+
+// Inicialização dos Motores
+Motor motor01 = {28,27,26};
+Motor motor02 = {22,21,20};
+Motor motor03 = {7,2,3};
+
+
 // ============= MOTOR DRIVER =============
 
-void motor_setup() {
+void motor_setup(Motor* motor) {
     // Direção
-    gpio_init(IN1_PIN);
-    gpio_set_dir(IN1_PIN, GPIO_OUT);
+    gpio_init(motor->IN1);
+    gpio_set_dir(motor->IN1, GPIO_OUT);
 
-    gpio_init(IN2_PIN);
-    gpio_set_dir(IN2_PIN, GPIO_OUT);
+    gpio_init(motor->IN2);
+    gpio_set_dir(motor->IN2, GPIO_OUT);
 
     // PWM
-    gpio_set_function(PWM_PIN, GPIO_FUNC_PWM); // habilita função PWM
+    gpio_set_function(motor->EN, GPIO_FUNC_PWM); // habilita função PWM
 
-    uint slice_num = pwm_gpio_to_slice_num(PWM_PIN);
-    pwm_set_wrap(slice_num, 255);  // Resolução de 8 bits
+    uint slice_num = pwm_gpio_to_slice_num(motor->EN);
+    // pwm_set_wrap(slice_num, 255);  // Resolução de 8 bits
+
+    pwm_set_wrap(slice_num, 249);           // wrap + 1 = 250
+    pwm_set_clkdiv(slice_num, 500.0f);       // divisor para 1kHz
     pwm_set_enabled(slice_num, true);
 }
 
-void motor_forward(uint8_t duty) {
-    gpio_put(IN1_PIN, 1);
-    gpio_put(IN2_PIN, 0);
+void motor_forward(Motor* motor, uint8_t duty) {
+    gpio_put(motor->IN1, 1);
+    gpio_put(motor->IN2, 0);
 
-    uint slice_num = pwm_gpio_to_slice_num(PWM_PIN);
-    pwm_set_chan_level(slice_num, pwm_gpio_to_channel(PWM_PIN), duty);
+    uint slice_num = pwm_gpio_to_slice_num(motor->EN);
+    pwm_set_chan_level(slice_num, pwm_gpio_to_channel(motor->EN), duty);
 }
 
-void motor_backward(uint8_t duty) {
-    gpio_put(IN1_PIN, 0);
-    gpio_put(IN2_PIN, 1);
+void motor_backward(Motor* motor, uint8_t duty) {
+    gpio_put(motor->IN1, 0);
+    gpio_put(motor->IN2, 1);
 
-    uint slice_num = pwm_gpio_to_slice_num(PWM_PIN);
-    pwm_set_chan_level(slice_num, pwm_gpio_to_channel(PWM_PIN), duty);
+    uint slice_num = pwm_gpio_to_slice_num(motor->EN);
+    pwm_set_chan_level(slice_num, pwm_gpio_to_channel(motor->EN), duty);
 }
 
-void motor_stop() {
-    gpio_put(IN1_PIN, 0);
-    gpio_put(IN2_PIN, 0);
+void motor_stop(Motor* motor) {
+    gpio_put(motor->IN1, 0);
+    gpio_put(motor->IN2, 0);
 
-    uint slice_num = pwm_gpio_to_slice_num(PWM_PIN);
-    pwm_set_chan_level(slice_num, pwm_gpio_to_channel(PWM_PIN), 0);
+    uint slice_num = pwm_gpio_to_slice_num(motor->EN);
+    pwm_set_chan_level(slice_num, pwm_gpio_to_channel(motor->EN), 0);
 }
 
 // ============= MAIN =============
 
 int main() {
     stdio_init_all();
-    motor_setup();
+
+    motor_setup(&motor01);
+    motor_setup(&motor02);
+    motor_setup(&motor03);
+
     setup_encoder(&encoder1);
+    setup_encoder(&encoder2);
+    setup_encoder(&encoder3);
 
+    // Registra o callback global
     gpio_set_irq_enabled_with_callback(encoder1.pinA, GPIO_IRQ_EDGE_RISE, true, &gpio_callback);
+    gpio_set_irq_enabled(encoder2.pinA, GPIO_IRQ_EDGE_RISE, true);  // sem registrar novamente o callback
+    gpio_set_irq_enabled(encoder3.pinA, GPIO_IRQ_EDGE_RISE, true);  // sem registrar novamente o callback
 
-    PIDController motor_pid;
-    pid_init(&motor_pid, KP, KI, KD, SETPOINT, -255.0f, 255.0f); // setpoint: 100 RPM
+    // Definir setpoints
+    int setpoint_1 = -36;
+    int setpoint_2 = 0;
+    int setpoint_3 = 36;
+
+    // Inicializar controlador 
+    PIDController motor1_pid, motor2_pid, motor3_pid;
+    pid_init(&motor1_pid, KP, KI, KD, abs(setpoint_1), 0.0f, 255.0f);
+    pid_init(&motor2_pid, KP, KI, KD, abs(setpoint_2), 0.0f, 255.0f);
+    pid_init(&motor3_pid, KP, KI, KD, abs(setpoint_3), 0.0f, 255.0f);
 
     while (true) {
-        float output = pid_compute(&motor_pid, encoder1.velocity);
-        motor_forward((uint8_t)output);
-        printf("Setpoint: %.1f | Vel: %.1f RPM | PWM: %.0f\n", motor_pid.setpoint, encoder1.velocity, output);
+        //printf("Velocity 1 %.2f | Velocity 2 %.2f | Velocity 3 %.2f\n", encoder1.velocity, encoder2.velocity, encoder3.velocity);
+        //Para o Motor 01
+        float output_1 = pid_compute(&motor1_pid, abs(encoder1.velocity));
+        if (setpoint_1 > 0){
+            motor_forward(&motor01, output_1);
+            printf("Setpoint: %.1f | Vel: %.1f RPM | PWM: %.0f\n", motor1_pid.setpoint, encoder1.velocity, output_1);
+        }
+        else if (setpoint_1 < 0)
+        {
+            motor_backward(&motor01, output_1);
+            printf("Setpoint:- %.1f | Vel: %.1f RPM | PWM: %.0f\n", motor1_pid.setpoint, encoder1.velocity, output_1);
+        }
+
+        //Para o Motor 02
+        float output_2 = pid_compute(&motor2_pid, abs(encoder2.velocity));
+        if (setpoint_2 > 0){
+            motor_forward(&motor02, output_2);
+            printf("Setpoint: %.1f | Vel: %.1f RPM | PWM: %.0f\n", motor2_pid.setpoint, encoder2.velocity, output_2);
+        }
+        else if (setpoint_2 < 0)
+        {
+            motor_backward(&motor02, output_2);
+            printf("Setpoint:- %.1f | Vel: %.1f RPM | PWM: %.0f\n", motor2_pid.setpoint, encoder2.velocity, output_2);
+        }
+ 
+        // // Para o Motor 03
+        float output_3 = pid_compute(&motor3_pid, abs(encoder3.velocity));
+        if (setpoint_3 > 0){
+            motor_forward(&motor03, output_3);
+            printf("Setpoint: %.1f | Vel: %.1f RPM | PWM: %.0f\n", motor3_pid.setpoint, encoder3.velocity, output_3);
+        }
+        else if (setpoint_3 < 0)
+        {
+            motor_backward(&motor03, output_3);
+            printf("Setpoint:- %.1f | Vel: %.1f RPM | PWM: %.0f\n", motor3_pid.setpoint, encoder3.velocity, output_3);
+        }
         sleep_ms(1); 
     }
 }
