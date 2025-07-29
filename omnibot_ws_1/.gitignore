@@ -1,0 +1,30 @@
+# ROS build and log files
+build/
+devel/
+install/
+log/
+
+# Catkin tools
+.catkin_tools/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# CMake files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Misc
+*.bak
+*.orig
+*.old
+*.log
+*.DS_Store
