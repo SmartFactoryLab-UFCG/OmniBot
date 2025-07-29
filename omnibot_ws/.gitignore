@@ -28,6 +28,3 @@ cmake_install.cmake
 *.old
 *.log
 *.DS_Store
-
-# ROS launch logs
-*.launch.*
