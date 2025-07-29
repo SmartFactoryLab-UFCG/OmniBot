@@ -4,7 +4,7 @@
     <link name="camera_link_${suffix}">
       <visual>
         <geometry>
-          <mesh filename="package://ros2_omni_robot_sim/meshes/3w_v2/camera.stl" />
+          <mesh filename="package://omnibot_description/meshes/3w_v2/camera.stl" />
         </geometry>
         <material name="black">
           <color rgba="0 0 0 1" />
@@ -12,7 +12,7 @@
       </visual>
       <collision>
         <geometry>
-          <mesh filename="package://ros2_omni_robot_sim/meshes/3w_v2/camera.stl" />
+          <mesh filename="package://omnibot_description/meshes/3w_v2/camera.stl" />
         </geometry>
       </collision>
       <inertial>

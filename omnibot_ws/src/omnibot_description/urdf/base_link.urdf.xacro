@@ -1,14 +1,14 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
-  <xacro:include filename="$(find ros2_omni_robot_sim)/urdf/3w_v2/omni_wheel.urdf.xacro"/>
-  <xacro:include filename="$(find ros2_omni_robot_sim)/urdf/3w_v2/camera.urdf.xacro"/>
-  <xacro:include filename="$(find ros2_omni_robot_sim)/urdf/3w_v2/lidar.urdf.xacro"/>
-  <xacro:include filename="$(find ros2_omni_robot_sim)/urdf/3w_v2/imu.urdf.xacro"/>
+  <xacro:include filename="$(find omnibot_description)/urdf/omni_wheel.urdf.xacro"/>
+  <xacro:include filename="$(find omnibot_description)/urdf/camera.urdf.xacro"/>
+  <xacro:include filename="$(find omnibot_description)/urdf/lidar.urdf.xacro"/>
+  <xacro:include filename="$(find omnibot_description)/urdf/imu.urdf.xacro"/>
   <xacro:macro name="base_link" params="parent xyz rpy">
     <link name="base_link">
       <visual>
         <geometry>
-          <mesh filename="package://ros2_omni_robot_sim/meshes/3w_v2/base_link.dae" />
+          <mesh filename="package://omnibot_description/meshes/3w_v2/base_link.dae" />
         </geometry>
         <!-- <material name="base_color">
           <color rgba="0.34 0.55 0.949 1" />
@@ -16,7 +16,7 @@
       </visual>
       <collision>
         <geometry>
-          <mesh filename="package://ros2_omni_robot_sim/meshes/3w_v2/base_link.stl" />
+          <mesh filename="package://omnibot_description/meshes/3w_v2/base_link.stl" />
         </geometry>
       </collision>
       <inertial>

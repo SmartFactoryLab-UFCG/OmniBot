@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
-  <xacro:include filename="$(find ros2_omni_robot_sim)/urdf/3w_v2/roller.urdf.xacro"/>
+  <xacro:include filename="$(find omnibot_description)/urdf/roller.urdf.xacro"/>
   <xacro:macro name="omni_wheel" params="suffix parent xyz rpy">
     <link name="omni_wheel_link_${suffix}">
       <visual>
         <geometry>
-          <mesh filename="package://ros2_omni_robot_sim/meshes/3w_v2/omni_frame.stl" />
+          <mesh filename="package://omnibot_description/meshes/3w_v2/omni_frame.stl" />
         </geometry>
         <material name="white">
           <color rgba="1 1 1 1" />
@@ -13,7 +13,7 @@
       </visual>
       <collision>
         <geometry>
-          <mesh filename="package://ros2_omni_robot_sim/meshes/3w_v2/omni_frame.stl" />
+          <mesh filename="package://omnibot_description/meshes/3w_v2/omni_frame.stl" />
         </geometry>
       </collision>
       <inertial>
