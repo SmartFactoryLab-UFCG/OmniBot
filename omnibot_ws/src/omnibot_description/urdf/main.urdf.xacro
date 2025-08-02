@@ -3,7 +3,7 @@
 
   <xacro:include filename="$(find omnibot_description)/urdf/base_link.urdf.xacro" />
   <xacro:include filename="$(find omnibot_description)/urdf/gazebo_plugins.urdf.xacro" />   
-  <!-- <xacro:include filename="$(find omnibot_description)/urdf/ros2_control.urdf.xacro" /> -->
+  <xacro:include filename="$(find omnibot_description)/urdf/ros2_control.urdf.xacro" />
 
   <link name="base_footprint" />
   <!-- Base Link -->
