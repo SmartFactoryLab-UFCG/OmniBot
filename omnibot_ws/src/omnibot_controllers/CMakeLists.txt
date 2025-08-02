@@ -14,7 +14,7 @@ find_package(std_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 install(
-  DIRECTORY config
+  DIRECTORY launch config
   DESTINATION share/${PROJECT_NAME}
 )
 
