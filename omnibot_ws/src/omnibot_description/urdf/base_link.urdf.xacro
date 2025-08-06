@@ -15,8 +15,9 @@
         </material> -->
       </visual>
       <collision>
+        <origin xyz="0 0 0.05" rpy="0 0 0"/>
         <geometry>
-          <mesh filename="package://omnibot_description/meshes/3w_v2/base_link.stl" />
+          <cylinder radius="0.125" length="0.09"/>
         </geometry>
       </collision>
       <inertial>
