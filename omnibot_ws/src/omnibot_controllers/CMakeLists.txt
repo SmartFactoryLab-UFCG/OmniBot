@@ -14,7 +14,7 @@ find_package(std_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 install(
-  DIRECTORY launch config
+  DIRECTORY launch config omnibot_controllers
   DESTINATION share/${PROJECT_NAME}
 )
 
