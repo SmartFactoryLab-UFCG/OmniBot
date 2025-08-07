@@ -59,8 +59,8 @@ class OmniKinematics(Node):
                                      [msg.linear.y],
                                      [msg.angular.z]])
 
-        # 2. Calcula as velocidades das rodas (omega1, omega2, omega3)
-        # Formula: (1/r) * M @ v_robo
+        # 2. Calcula as velocidades das rodas (w1, w2, w3)
+        # [w1,w2,w3]: (1/r) * M @ v_robo
         wheel_speeds = (1 / self.wheel_radius_) * (self.inverse_kinematics_matrix_ @ robot_vel_vector)
 
         # 3. Prepara a mensagem para publicação

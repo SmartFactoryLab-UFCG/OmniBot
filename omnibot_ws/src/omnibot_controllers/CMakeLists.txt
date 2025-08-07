@@ -13,9 +13,17 @@ find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
 
+ament_python_install_package(${PROJECT_NAME})
+
 install(
-  DIRECTORY launch config omnibot_controllers
+  DIRECTORY launch config 
   DESTINATION share/${PROJECT_NAME}
+)
+
+# Use este método mais explícito para garantir as permissões
+install(FILES ${PROJECT_NAME}/omni_kinematics.py
+  DESTINATION lib/${PROJECT_NAME}
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
 )
 
 if(BUILD_TESTING)
