@@ -19,35 +19,19 @@ def generate_launch_description():
     )
 
     # Spawn the wheel controller for ros2 control
-    wheel1_controller_spawner = Node(
+    wheel_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["wheel1_controller", 
+        arguments=["omni_wheel_controller", 
                    "--controller-manager", 
                    "/controller_manager"
                 ]
     )
-    wheel2_controller_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["wheel2_controller", 
-                   "--controller-manager", 
-                   "/controller_manager"
-                ]
-    )
-    wheel3_controller_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["wheel3_controller", 
-                   "--controller-manager", 
-                   "/controller_manager"
-                ]
-    )    
+  
     return LaunchDescription(
         [
             joint_state_broadcaster_spawner,
-            wheel1_controller_spawner,
-            wheel2_controller_spawner,
-            wheel3_controller_spawner
+            wheel_controller_spawner,
+
         ]
     )
