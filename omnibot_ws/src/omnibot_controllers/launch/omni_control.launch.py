@@ -22,7 +22,7 @@ def generate_launch_description():
 
     use_sim_time = LaunchConfiguration("use_sim_time")
     wheel_radius = LaunchConfiguration("wheel_radius")
-    wheel_distance = LaunchConfiguration("wheel_separation")
+    wheel_distance = LaunchConfiguration("wheel_distance")
 
     # Spawn the controller manager for ros2 control
     joint_state_broadcaster_spawner = Node(
@@ -48,7 +48,7 @@ def generate_launch_description():
     # Spawn the kinematics controller
     omni_kinematics = Node(
         package='omnibot_controllers',
-        executable='omni_kinematics',
+        executable='omni_kinematics.py',
         parameters=[
             {'wheel_radius':wheel_radius,
              'wheel_distance':wheel_distance,
