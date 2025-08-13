@@ -5,9 +5,9 @@ from rclpy.constants import S_TO_NS
 from rclpy.time import Time
 
 from std_msgs.msg import Float64MultiArray
-from geometry_msgs.msg import Twist, TransformStamped
+from geometry_msgs.msg import Twist, TransformStamped, PoseStamped
 from sensor_msgs.msg import JointState
-from nav_msgs.msg import Odometry
+from nav_msgs.msg import Odometry, Path
 from tf2_ros import TransformBroadcaster
 from tf_transformations import quaternion_from_euler
 import numpy as np
@@ -44,6 +44,7 @@ class OmniKinematics(Node):
         self.odom_pub_ = self.create_publisher(Odometry, "odom", 10)
         self.vel_sub_ = self.create_subscription(Twist, "/cmd_vel", self.cmd_vel_callback, 10)
         self.joint_sub_ = self.create_subscription(JointState,"/joint_states", self.joint_callback, 10)
+        self.path_pub_ = self.create_publisher(Path, "/path", 10)
         self.br_ = TransformBroadcaster(self)
 
         # --- Matrizes Cinemáticas ---
@@ -59,6 +60,10 @@ class OmniKinematics(Node):
             [r/3,           -2*r/3,   r/3],
             [r/(3*L),       r/(3*L),  r/(3*L)]
         ])
+
+        # --- NOVA MENSAGEM DE CAMINHO ---
+        self.path_msg_ = Path()
+        self.path_msg_.header.frame_id = "odom"
 
         self.get_logger().info("Omni Kinematics Node has been started.")
 
@@ -150,6 +155,27 @@ class OmniKinematics(Node):
         # Atualiza as variáveis para a próxima iteração
         self.prev_time_ = current_time
         self.wheel_prev_pos_ = current_pos
+
+        # --- ATUALIZAR E PUBLICAR O CAMINHO ---
+        # 7. Cria uma nova pose com timestamp
+        current_pose = PoseStamped()
+        current_pose.header.stamp = current_time.to_msg()
+        current_pose.header.frame_id = "odom"
+        current_pose.pose.position.x = self.x_
+        current_pose.pose.position.y = self.y_
+        current_pose.pose.orientation = odom_msg.pose.pose.orientation
+
+        # 8. Adiciona a nova pose à lista de poses na mensagem Path
+        self.path_msg_.header.stamp = current_time.to_msg()
+        self.path_msg_.poses.append(current_pose)
+        
+        # 9. Publica a mensagem de caminho completa
+        self.path_pub_.publish(self.path_msg_)
+
+        # Atualiza as variáveis para a próxima iteração
+        self.prev_time_ = current_time
+        self.wheel_prev_pos_ = current_pos
+
 
 def main(args=None):
     rclpy.init(args=args)
