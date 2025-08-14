@@ -10,9 +10,13 @@ namespace omnibot_firmware // Novo namespace
 class OmnibotInterface : public hardware_interface::SystemInterface // Nova classe
 {
 public:
+  // Class constructor
   OmnibotInterface() = default;
+
+  // Class destructor
   ~OmnibotInterface()
   {
+    
     if (pico_.IsOpen())
     {
       try
@@ -25,9 +29,11 @@ public:
                             "Algo deu errado ao fechar a conexão com a porta " << port_);
       }
     }
+
   }
 
-  CallbackReturn on_init(const hardware_interface::HardwareInfo& hardware_info) override
+  // Inicializar comunicação com porta serial
+  CallbackReturn on_init(const hardware_interface::HardwareInfo& hardware_info) 
   {
     if (hardware_interface::SystemInterface::on_init(hardware_info) != CallbackReturn::SUCCESS)
     {
@@ -40,11 +46,11 @@ public:
     }
     catch (const std::out_of_range& e)
     {
-      RCLCPP_FATAL(rclcpp::get_logger("OmnibotInterface"), "Nenhuma Porta Serial fornecida! A abortar");
+      RCLCPP_FATAL(rclcpp::get_logger("OmnibotInterface"), "Nenhuma Porta Serial fornecida! Abortando execução");
       return CallbackReturn::FAILURE;
     }
 
-    // O código original já é genérico e funcionará para 3 juntas
+    // Inicializa os vetores do tamanho para três juntas
     velocity_commands_.resize(info_.joints.size(), 0.0);
     position_states_.resize(info_.joints.size(), 0.0);
     velocity_states_.resize(info_.joints.size(), 0.0);
@@ -52,31 +58,37 @@ public:
     return CallbackReturn::SUCCESS;
   }
 
-  std::vector<hardware_interface::StateInterface> export_state_interfaces() override
+  // Exportar estado atual de state_interface (velocidade e posição)
+  std::vector<hardware_interface::StateInterface> export_state_interfaces() 
   {
     std::vector<hardware_interface::StateInterface> state_interfaces;
     for (size_t i = 0; i < info_.joints.size(); i++)
     {
+      // Position Interface
       state_interfaces.emplace_back(hardware_interface::StateInterface(
           info_.joints[i].name, hardware_interface::HW_IF_POSITION, &position_states_[i]));
+      // Velocity Interface
       state_interfaces.emplace_back(hardware_interface::StateInterface(
           info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &velocity_states_[i]));
     }
     return state_interfaces;
   }
 
-  std::vector<hardware_interface::CommandInterface> export_command_interfaces() override
+  // Exportar comandos atuais da interface de comando (somente velocidade)
+  std::vector<hardware_interface::CommandInterface> export_command_interfaces() 
   {
     std::vector<hardware_interface::CommandInterface> command_interfaces;
     for (size_t i = 0; i < info_.joints.size(); i++)
     {
+      // Velocity interface
       command_interfaces.emplace_back(hardware_interface::CommandInterface(
           info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &velocity_commands_[i]));
     }
     return command_interfaces;
   }
 
-  CallbackReturn on_activate(const rclcpp_lifecycle::State&) override
+  // Transition para estado activated
+  CallbackReturn on_activate(const rclcpp_lifecycle::State&) 
   {
     RCLCPP_INFO(rclcpp::get_logger("OmnibotInterface"), "A iniciar o hardware do robô...");
     // Redimensiona os vetores para 3 juntas
@@ -100,7 +112,8 @@ public:
     return CallbackReturn::SUCCESS;
   }
 
-  CallbackReturn on_deactivate(const rclcpp_lifecycle::State&) override
+ // Transition para estado activated
+  CallbackReturn on_deactivate(const rclcpp_lifecycle::State&) 
   {
     RCLCPP_INFO(rclcpp::get_logger("OmnibotInterface"), "A parar o hardware do robô...");
     if (pico_.IsOpen())
@@ -119,10 +132,13 @@ public:
     return CallbackReturn::SUCCESS;
   }
 
-  hardware_interface::return_type read(const rclcpp::Time&, const rclcpp::Duration&) override
+  // Função de leitura de mensagens da Pico
+  hardware_interface::return_type read(const rclcpp::Time&, const rclcpp::Duration&) 
   {
+    // Se a Pico estiver disponível 
     if (pico_.IsDataAvailable())
     {
+      // Leia uma nova mensagem
       std::string message;
       pico_.ReadLine(message);
 
@@ -131,12 +147,12 @@ public:
       auto dt = (current_time - last_run_).seconds();
       last_run_ = current_time;
 
+      // Processa cada parte da mensagem, separada por vírgulas. Ex: "1p30.0,"
       std::stringstream ss(message);
       std::string token;
-      // Processa cada parte da mensagem, separada por vírgulas. Ex: "1p30.0,"
       while (std::getline(ss, token, ','))
       {
-        if (token.length() < 4) // Ignora tokens inválidos
+        if (token.length() < 5) // Ignora tokens inválidos
         {
           continue;
         }
@@ -152,7 +168,7 @@ public:
           int multiplier = (token.at(1) == 'p') ? 1 : -1;
 
           // O resto da string é a velocidade
-          double velocity = std::stod(token.substr(2));
+          double velocity = std::stod(token.substr(2,token.size()));
           
           // Garante que o índice é válido antes de aceder ao vetor
           if (motor_index >= 0 && motor_index < velocity_states_.size())
@@ -173,7 +189,7 @@ public:
     return hardware_interface::return_type::OK;
   }
 
-  hardware_interface::return_type write(const rclcpp::Time&, const rclcpp::Duration&) override
+  hardware_interface::return_type write(const rclcpp::Time&, const rclcpp::Duration&) 
   {
     std::stringstream message_stream;
     // Formata a velocidade com uma casa decimal
@@ -215,7 +231,7 @@ public:
   }
 
 private:
-  LibSerial::SerialPort pico_; // Renomeado para pico_
+  LibSerial::SerialPort pico_;
   std::string port_;
   std::vector<double> velocity_commands_;
   std::vector<double> position_states_;
