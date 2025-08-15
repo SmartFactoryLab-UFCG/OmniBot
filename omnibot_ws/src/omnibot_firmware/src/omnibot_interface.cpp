@@ -2,19 +2,15 @@
 #include <hardware_interface/types/hardware_interface_type_values.hpp>
 #include <pluginlib/class_list_macros.hpp>
 #include <sstream>
-#include <vector>
-#include <string>
 
 namespace omnibot_firmware // Novo namespace
 {
-class OmnibotInterface : public hardware_interface::SystemInterface // Nova classe
-{
-public:
-  // Class constructor
-  OmnibotInterface() = default;
+  OmnibotInterface::OmnibotInterface()
+  {
+  }
 
   // Class destructor
-  ~OmnibotInterface()
+  OmnibotInterface::~OmnibotInterface()
   {
     
     if (pico_.IsOpen())
@@ -33,7 +29,7 @@ public:
   }
 
   // Inicializar comunicação com porta serial
-  CallbackReturn on_init(const hardware_interface::HardwareInfo& hardware_info) 
+  CallbackReturn OmnibotInterface::on_init(const hardware_interface::HardwareInfo& hardware_info) 
   {
     if (hardware_interface::SystemInterface::on_init(hardware_info) != CallbackReturn::SUCCESS)
     {
@@ -59,7 +55,7 @@ public:
   }
 
   // Exportar estado atual de state_interface (velocidade e posição)
-  std::vector<hardware_interface::StateInterface> export_state_interfaces() 
+  std::vector<hardware_interface::StateInterface> OmnibotInterface::export_state_interfaces() 
   {
     std::vector<hardware_interface::StateInterface> state_interfaces;
     for (size_t i = 0; i < info_.joints.size(); i++)
@@ -75,7 +71,7 @@ public:
   }
 
   // Exportar comandos atuais da interface de comando (somente velocidade)
-  std::vector<hardware_interface::CommandInterface> export_command_interfaces() 
+  std::vector<hardware_interface::CommandInterface> OmnibotInterface::export_command_interfaces() 
   {
     std::vector<hardware_interface::CommandInterface> command_interfaces;
     for (size_t i = 0; i < info_.joints.size(); i++)
@@ -88,7 +84,7 @@ public:
   }
 
   // Transition para estado activated
-  CallbackReturn on_activate(const rclcpp_lifecycle::State&) 
+  CallbackReturn OmnibotInterface::on_activate(const rclcpp_lifecycle::State&) 
   {
     RCLCPP_INFO(rclcpp::get_logger("OmnibotInterface"), "A iniciar o hardware do robô...");
     // Redimensiona os vetores para 3 juntas
@@ -113,7 +109,7 @@ public:
   }
 
  // Transition para estado activated
-  CallbackReturn on_deactivate(const rclcpp_lifecycle::State&) 
+  CallbackReturn OmnibotInterface::on_deactivate(const rclcpp_lifecycle::State&) 
   {
     RCLCPP_INFO(rclcpp::get_logger("OmnibotInterface"), "A parar o hardware do robô...");
     if (pico_.IsOpen())
@@ -133,7 +129,7 @@ public:
   }
 
   // Função de leitura de mensagens da Pico
-  hardware_interface::return_type read(const rclcpp::Time&, const rclcpp::Duration&) 
+  hardware_interface::return_type OmnibotInterface::read(const rclcpp::Time&, const rclcpp::Duration&) 
   {
     // Se a Pico estiver disponível 
     if (pico_.IsDataAvailable())
@@ -171,7 +167,7 @@ public:
           double velocity = std::stod(token.substr(2,token.size()));
           
           // Garante que o índice é válido antes de aceder ao vetor
-          if (motor_index >= 0 && motor_index < velocity_states_.size())
+          if (motor_index >= 0 && static_cast<size_t>(motor_index) < velocity_states_.size())
           {
             // Atualiza o estado da velocidade
             velocity_states_.at(motor_index) = multiplier * velocity;
@@ -189,7 +185,7 @@ public:
     return hardware_interface::return_type::OK;
   }
 
-  hardware_interface::return_type write(const rclcpp::Time&, const rclcpp::Duration&) 
+  hardware_interface::return_type OmnibotInterface::write(const rclcpp::Time&, const rclcpp::Duration&) 
   {
     std::stringstream message_stream;
     // Formata a velocidade com uma casa decimal
@@ -229,15 +225,6 @@ public:
 
     return hardware_interface::return_type::OK;
   }
-
-private:
-  LibSerial::SerialPort pico_;
-  std::string port_;
-  std::vector<double> velocity_commands_;
-  std::vector<double> position_states_;
-  std::vector<double> velocity_states_;
-  rclcpp::Time last_run_;
-};
 
 }  // namespace omnibot_firmware
 

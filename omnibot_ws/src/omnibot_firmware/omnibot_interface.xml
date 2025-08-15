@@ -1,0 +1,9 @@
+<library path="omnibot_firmware">
+    <class name="omnibot_firmware/OmnibotInterface"
+      type="omnibot_firmware::OmnibotInterface"
+      base_class_type="hardware_interface::SystemInterface">
+      <description>
+        Omnibot Hardware Interface
+      </description>
+    </class>
+  </library>

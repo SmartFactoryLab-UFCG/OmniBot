@@ -45,14 +45,14 @@ float pid_compute(PIDController* pid, float measured_value) {
     pid->previous_error = error;
 
     float output = pid->Kp * error + pid->Ki * pid->integral + pid->Kd * derivative;
-    
+
     if (output > pid->output_max) output = pid->output_max;
     if (output < pid->output_min) output = pid->output_min;
     return output;
 }
 
 
-// ============= ENCODER (Sem alterações) =============
+// ============= ENCODER =============
 typedef struct {
     uint pinA;
     uint pinB;
@@ -60,7 +60,7 @@ typedef struct {
     volatile int8_t direction;
     volatile uint64_t last_pulse_time_us;
 } Encoder;
-// ... (setup_encoder, gpio_callback continuam os mesmos) ...
+
 #define ENC1_A 15     
 #define ENC1_B 14     
 #define ENC2_A 13 
@@ -102,13 +102,13 @@ void gpio_callback(uint gpio, uint32_t events) {
     encoder->last_pulse_time_us = now;    
 }
 
-// ============= MOTOR DRIVER (Sem alterações) =============
+// ============= MOTOR DRIVER =============
 typedef struct {
     int EN;
     int IN1;
     int IN2;
 } Motor;
-// ... (motor_setup, motor_forward, etc. continuam os mesmos) ...
+
 Motor motor_array[3] = {
     {28, 27, 26},
     {22, 21, 20},
@@ -148,7 +148,7 @@ void motor_stop(Motor* motor) {
     pwm_set_chan_level(slice_num, pwm_gpio_to_channel(motor->EN), 0);
 }
 
-// ============= NOVAS FUNÇÕES DE COMUNICAÇÃO SERIAL =============
+// ============= COMUNICAÇÃO SERIAL =============
 
 // Array para armazenar os setpoints recebidos do ROS
 float setpoints[3] = {0.0f, 0.0f, 0.0f};
