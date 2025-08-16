@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <robot name="simple_robot" xmlns:xacro="http://ros.org/wiki/xacro">
 
+  <xacro:arg name="is_sim" default = "true"/>
+
   <xacro:include filename="$(find omnibot_description)/urdf/base_link.urdf.xacro" />
   <xacro:include filename="$(find omnibot_description)/urdf/gazebo_plugins.urdf.xacro" />   
   <xacro:include filename="$(find omnibot_description)/urdf/ros2_control.urdf.xacro" />

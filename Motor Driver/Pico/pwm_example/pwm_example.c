@@ -205,7 +205,7 @@ int main() {
 
     // Definir setpoints
     int setpoint_1 = -36;
-    int setpoint_2 = 0;
+    int setpoint_2 = 36;
     int setpoint_3 = 36;
 
     // Inicializar controlador 

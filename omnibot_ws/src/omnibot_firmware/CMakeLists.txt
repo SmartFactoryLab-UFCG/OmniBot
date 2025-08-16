@@ -14,7 +14,6 @@ find_package(std_msgs REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(pluginlib REQUIRED)
-
 pkg_check_modules(SERIAL libserial)
 
 add_library(${PROJECT_NAME} SHARED
@@ -42,6 +41,11 @@ install(
 install(
   DIRECTORY include
   DESTINATION include 
+)
+
+install(
+  DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)
