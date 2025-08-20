@@ -9,7 +9,6 @@ from geometry_msgs.msg import Twist, TransformStamped, PoseStamped
 from sensor_msgs.msg import JointState
 from nav_msgs.msg import Odometry, Path
 from tf2_ros import TransformBroadcaster
-from tf_transformations import quaternion_from_euler
 import numpy as np
 import math
 
@@ -131,11 +130,11 @@ class OmniKinematics(Node):
         
         odom_msg.pose.pose.position.x = self.x_
         odom_msg.pose.pose.position.y = self.y_
-        q = quaternion_from_euler(0, 0, self.theta_)
-        odom_msg.pose.pose.orientation.x = q[0]
-        odom_msg.pose.pose.orientation.y = q[1]
-        odom_msg.pose.pose.orientation.z = q[2]
-        odom_msg.pose.pose.orientation.w = q[3]
+        
+        odom_msg.pose.pose.orientation.x = 0.0
+        odom_msg.pose.pose.orientation.y = 0.0
+        odom_msg.pose.pose.orientation.z = math.sin(self.theta_/2.0)
+        odom_msg.pose.pose.orientation.w = math.cos(self.theta_/2.0)
 
         odom_msg.twist.twist.linear.x = vx_robot
         odom_msg.twist.twist.linear.y = vy_robot
