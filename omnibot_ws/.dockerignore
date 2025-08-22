@@ -1,0 +1,51 @@
+**/*.bag
+**/*.db3
+**/*.pt
+**/build
+**/install
+**/log
+**/.catkin_tools
+**/.catkin_workspace
+**/.dockerignore
+**/.gitignore
+**/*.log
+**/*.pyc
+.git
+LICENSE
+README.md
+
+################################################################################
+# C++
+
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app

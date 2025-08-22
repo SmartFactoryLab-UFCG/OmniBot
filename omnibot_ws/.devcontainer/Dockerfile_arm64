@@ -1,0 +1,545 @@
+FROM docker.io/arm64v8/ubuntu:22.04 as smart-factory-jetson
+
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES all
+
+# Turns off buffering for easier container logging
+ENV PYTHONUNBUFFERED=1
+
+ENV ROS_DISTRO=humble
+ENV AMENT_PREFIX_PATH=/opt/ros/humble
+ENV COLCON_PREFIX_PATH=/opt/ros/humble
+ENV LD_LIBRARY_PATH=/opt/ros/humble/lib
+ENV PATH=/opt/ros/humble/bin:$PATH
+ENV PYTHONPATH=/opt/ros/humble/lib/python3.10/site-packages
+ENV ROS_PYTHON_VERSION=3
+ENV ROS_VERSION=2
+
+ARG USERNAME=smart-factory-jetson
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+
+# Create a non-root user
+RUN groupadd --gid $USER_GID $USERNAME \
+  && useradd -s /bin/bash --uid $USER_UID --gid $USER_GID -m $USERNAME \
+  # Add sudo support for the non-root user
+  && apt-get update \
+  && apt-get install -y sudo \
+  && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME\
+  && chmod 0440 /etc/sudoers.d/$USERNAME
+
+# Set up autocompletion for user
+RUN apt-get update && apt-get install -y git-core bash-completion \
+&& echo "if [ -f /opt/ros/${ROS_DISTRO}/setup.bash ]; then source /opt/ros/${ROS_DISTRO}/setup.bash; fi" >> /home/$USERNAME/.bashrc \
+&& echo "if [ -f /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash ]; then source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash; fi" >> /home/$USERNAME/.bashrc \
+&& rm -rf /var/lib/apt/lists/* 
+
+# Avoid warnings by switching to noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
+# Install language
+RUN apt-get update && apt-get install -y \
+  locales \
+  && locale-gen en_US.UTF-8 \
+  && update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+ENV LANG en_US.UTF-8
+
+# Install timezone
+RUN ln -fs /usr/share/zoneinfo/UTC /etc/localtime \
+  && export DEBIAN_FRONTEND=noninteractive \
+  && apt-get update \
+  && apt-get install -y tzdata \
+  && dpkg-reconfigure --frontend noninteractive tzdata
+
+# Install common programs
+RUN apt-get update && apt-get install -y \
+    bash-completion \
+    bc \
+    build-essential \
+    bzip2 \
+    can-utils \
+    ca-certificates \
+    command-not-found \
+    cmake \
+    curl \
+    evince \
+    freeglut3-dev \
+    gdb \
+    git \
+    gnupg2 \
+    gstreamer1.0-alsa \
+    gstreamer1.0-libav \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-tools \
+    htop \
+    i2c-tools \
+    iftop \
+    iproute2 \
+    iputils-ping \
+    iw \
+    kbd \
+    kmod \
+    language-pack-en-base \
+    libapt-pkg-dev \
+    libcanberra-gtk3-module \
+    libeigen3-dev \
+    libgflags-dev \
+    libgles2 \
+    libglu1-mesa-dev \
+    libglvnd-dev \
+    libgoogle-glog-dev \
+    libgtk-3-0 \
+    liboctomap-dev \
+    liboctovis-dev \
+    libudev1 \
+    libudev-dev \
+    libusb-1.0-0-dev \
+    libvulkan1 \
+    libzmq5 \
+    lsb-release \
+    mesa-utils \
+    mtd-utils \
+    nano \
+    net-tools \
+    nlohmann-json3-dev \
+    openjdk-11-jdk \
+    openssh-client \
+    parted \
+    pciutils \
+    pkg-config \
+    psmisc \
+    python3 \
+    python3-distutils \
+    python3-numpy \
+    python3-pexpect \
+    python3-pip \
+    software-properties-common \
+    sudo \
+    sox \
+    traceroute \
+    terminator \
+    tmux \
+    udev \
+    vim \
+    vulkan-tools \
+    wpasupplicant \
+    wget \
+    wireless-tools \
+    xterm
+
+# Extra Arm Dependencies
+RUN apt-get update && apt-get install -y \
+    graphicsmagick-libmagick-dev-compat \
+    libbenchmark-dev \
+    libbenchmark1 \
+    libgeographic-dev \
+    libgeographic19 \
+    libglfw3 \
+    libglfw3-dev \
+    libgraphics-magick-perl \
+    libgraphicsmagick++-q16-12 \
+    libgraphicsmagick++1-dev \
+    libgraphicsmagick-q16-3 \
+    libgraphicsmagick1-dev \
+    libncurses-dev \
+    libomp-14-dev \
+    libomp-dev \
+    libomp5-14 \
+    libpcap0.8-dev \
+    libxtensor-dev \
+    xtl-dev
+
+# EGL
+RUN echo "/usr/lib/aarch64-linux-gnu/tegra" >> /etc/ld.so.conf.d/nvidia-tegra.conf && \
+    echo "/usr/lib/aarch64-linux-gnu/tegra-egl" >> /etc/ld.so.conf.d/nvidia-tegra.conf
+RUN rm -rf /usr/share/glvnd/egl_vendor.d && \
+    mkdir -p /usr/share/glvnd/egl_vendor.d/ && echo '\
+{\
+    "file_format_version" : "1.0.0",\
+    "ICD" : {\
+        "library_path" : "libEGL_nvidia.so.0"\
+    }\
+}' > /usr/share/glvnd/egl_vendor.d/10_nvidia.json
+RUN mkdir -p /usr/share/egl/egl_external_platform.d/ && echo '\
+{\
+    "file_format_version" : "1.0.0",\
+    "ICD" : {\
+        "library_path" : "libnvidia-egl-wayland.so.1"\
+    }\
+}' > /usr/share/egl/egl_external_platform.d/nvidia_wayland.json
+
+RUN echo "deb https://repo.download.nvidia.com/jetson/common r35.3 main" >> /etc/apt/sources.list.d/nvidia-l4t-apt-source.list && \
+    echo "deb https://repo.download.nvidia.com/jetson/t234 r35.3 main" >> /etc/apt/sources.list.d/nvidia-l4t-apt-source.list
+RUN wget -O /etc/jetson-ota-public.key https://gitlab.com/nvidia/container-images/l4t-base/-/raw/master/jetson-ota-public.key && \
+    apt-key add /etc/jetson-ota-public.key
+
+# CUDA, cuDNN
+RUN apt-get update && \
+    apt-get install -qq -y --no-install-recommends \
+        cuda \
+        libcudnn8 \
+        libcudnn8-dev \
+        libcudnn8-samples \
+        && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN ldconfig
+
+# install ROS2 Humble
+RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ros-${ROS_DISTRO}-desktop \
+        && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ros-${ROS_DISTRO}-rmw-cyclonedds-cpp \
+    ros-dev-tools \
+    && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# install colcon and rosdep
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3-colcon-common-extensions \
+        python3-rosdep \
+        && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+    # initialize rosdep
+RUN sudo rosdep init && \
+    rosdep update
+
+RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> ~/.bashrc && \
+    echo "source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash" >> ~/.bashrc
+
+WORKDIR /robotxr
+
+# ecl ros packages
+RUN apt-get update && apt-get install -y \
+    ros-${ROS_DISTRO}-ecl-build \
+    ros-${ROS_DISTRO}-ecl-command-line \
+    ros-${ROS_DISTRO}-ecl-concepts \
+    ros-${ROS_DISTRO}-ecl-config \
+    ros-${ROS_DISTRO}-ecl-console \
+    ros-${ROS_DISTRO}-ecl-containers \
+    ros-${ROS_DISTRO}-ecl-converters \
+    ros-${ROS_DISTRO}-ecl-devices \
+    ros-${ROS_DISTRO}-ecl-eigen \
+    ros-${ROS_DISTRO}-ecl-errors \
+    ros-${ROS_DISTRO}-ecl-exceptions \
+    ros-${ROS_DISTRO}-ecl-formatters \
+    ros-${ROS_DISTRO}-ecl-geometry \
+    ros-${ROS_DISTRO}-ecl-license \
+    ros-${ROS_DISTRO}-ecl-linear-algebra \
+    ros-${ROS_DISTRO}-ecl-math \
+    ros-${ROS_DISTRO}-ecl-mobile-robot \
+    ros-${ROS_DISTRO}-ecl-mpl \
+    ros-${ROS_DISTRO}-ecl-sigslots \
+    ros-${ROS_DISTRO}-ecl-streams \
+    ros-${ROS_DISTRO}-ecl-threads \
+    ros-${ROS_DISTRO}-ecl-time \
+    ros-${ROS_DISTRO}-ecl-time-lite \
+    ros-${ROS_DISTRO}-ecl-type-traits \
+    ros-${ROS_DISTRO}-ecl-utilities
+
+# Kobuki packages required to build workspace
+RUN apt-get update && apt-get install -y \
+    ros-${ROS_DISTRO}-kobuki-core \
+    ros-${ROS_DISTRO}-kobuki-ros-interfaces \
+    ros-${ROS_DISTRO}-kobuki-velocity-smoother
+
+RUN apt-get update && apt-get install -y \
+    ros-${ROS_DISTRO}-joint-state-publisher \
+    ros-${ROS_DISTRO}-joint-state-publisher-gui \
+    ros-${ROS_DISTRO}-ros-gz
+
+RUN apt-get update && apt-get install -y \
+    ros-${ROS_DISTRO}-rosbridge-library \
+    ros-${ROS_DISTRO}-point-cloud-interfaces
+
+RUN apt-get update && apt-get install -y \
+    ros-${ROS_DISTRO}-plotjuggler-ros \
+    ros-${ROS_DISTRO}-tf-transformations
+
+# Navigation prerequisites
+RUN apt-get update && apt-get install -y \
+    ros-${ROS_DISTRO}-twist-mux
+
+# Instalação do zbar_ros
+RUN apt-get update && apt-get install -y \
+    ros-${ROS_DISTRO}-zbar-ros
+
+RUN apt-get update && apt-get install -y \
+    ros-${ROS_DISTRO}-camera-info-manager \
+    ros-${ROS_DISTRO}-image-publisher \
+    ros-${ROS_DISTRO}-image-transport-plugins \ 
+    ros-${ROS_DISTRO}-point-cloud-transport \ 
+    ros-${ROS_DISTRO}-point-cloud-transport-plugins \
+    ros-${ROS_DISTRO}-behaviortree-cpp \
+    ros-${ROS_DISTRO}-generate-parameter-library \
+    ros-${ROS_DISTRO}-cv-bridge \
+    ros-${ROS_DISTRO}-ros-testing \
+    ros-${ROS_DISTRO}-sophus \
+    ros-${ROS_DISTRO}-test-msgs
+
+# ARM exclusive dependencies
+RUN apt-get update && apt-get install -y \
+    ros-${ROS_DISTRO}-behaviortree-cpp-v3 \
+    ros-${ROS_DISTRO}-bond \
+    ros-${ROS_DISTRO}-bondcpp \
+    ros-${ROS_DISTRO}-costmap-queue \
+    ros-${ROS_DISTRO}-dwb-core \
+    ros-${ROS_DISTRO}-dwb-critics \
+    ros-${ROS_DISTRO}-dwb-msgs \
+    ros-${ROS_DISTRO}-dwb-plugins \
+    ros-${ROS_DISTRO}-filters \
+    ros-${ROS_DISTRO}-geographic-msgs \
+    ros-${ROS_DISTRO}-grid-map-core \
+    ros-${ROS_DISTRO}-grid-map-cv \
+    ros-${ROS_DISTRO}-grid-map-msgs \
+    ros-${ROS_DISTRO}-grid-map-ros \
+    ros-${ROS_DISTRO}-gtsam \
+    ros-${ROS_DISTRO}-imu-filter-madgwick \
+    ros-${ROS_DISTRO}-laser-proc \
+    ros-${ROS_DISTRO}-libg2o \
+    ros-${ROS_DISTRO}-libnabo \
+    ros-${ROS_DISTRO}-libpointmatcher \
+    ros-${ROS_DISTRO}-librealsense2 \
+    ros-${ROS_DISTRO}-mqtt-client \
+    ros-${ROS_DISTRO}-nav-2d-msgs \
+    ros-${ROS_DISTRO}-nav-2d-utils \
+    ros-${ROS_DISTRO}-nav2-amcl \
+    ros-${ROS_DISTRO}-nav2-behavior-tree \
+    ros-${ROS_DISTRO}-nav2-behaviors \
+    ros-${ROS_DISTRO}-nav2-bringup \
+    ros-${ROS_DISTRO}-nav2-bt-navigator \
+    ros-${ROS_DISTRO}-nav2-collision-monitor \
+    ros-${ROS_DISTRO}-nav2-common \
+    ros-${ROS_DISTRO}-nav2-constrained-smoother \
+    ros-${ROS_DISTRO}-nav2-controller \
+    ros-${ROS_DISTRO}-nav2-core \
+    ros-${ROS_DISTRO}-nav2-costmap-2d \
+    ros-${ROS_DISTRO}-nav2-dwb-controller \
+    ros-${ROS_DISTRO}-nav2-lifecycle-manager \
+    ros-${ROS_DISTRO}-nav2-map-server \
+    ros-${ROS_DISTRO}-nav2-mppi-controller \
+    ros-${ROS_DISTRO}-nav2-msgs \
+    ros-${ROS_DISTRO}-nav2-navfn-planner \
+    ros-${ROS_DISTRO}-nav2-planner \
+    ros-${ROS_DISTRO}-nav2-regulated-pure-pursuit-controller \
+    ros-${ROS_DISTRO}-nav2-rotation-shim-controller \
+    ros-${ROS_DISTRO}-nav2-rviz-plugins \
+    ros-${ROS_DISTRO}-nav2-simple-commander \
+    ros-${ROS_DISTRO}-nav2-smac-planner \
+    ros-${ROS_DISTRO}-nav2-smoother \
+    ros-${ROS_DISTRO}-nav2-theta-star-planner \
+    ros-${ROS_DISTRO}-nav2-util \
+    ros-${ROS_DISTRO}-nav2-velocity-smoother \
+    ros-${ROS_DISTRO}-nav2-voxel-grid \
+    ros-${ROS_DISTRO}-nav2-waypoint-follower \
+    ros-${ROS_DISTRO}-navigation2 \
+    ros-${ROS_DISTRO}-octomap-msgs \
+    ros-${ROS_DISTRO}-ompl \
+    ros-${ROS_DISTRO}-pcl-ros \
+    ros-${ROS_DISTRO}-realsense2-camera \
+    ros-${ROS_DISTRO}-realsense2-camera-msgs \
+    ros-${ROS_DISTRO}-robot-localization \
+    ros-${ROS_DISTRO}-slam-toolbox \
+    ros-${ROS_DISTRO}-smclib \
+    ros-${ROS_DISTRO}-urg-c \
+    ros-${ROS_DISTRO}-urg-node \
+    ros-${ROS_DISTRO}-urg-node-msgs \
+    ros-${ROS_DISTRO}-velodyne \
+    ros-${ROS_DISTRO}-velodyne-driver \
+    ros-${ROS_DISTRO}-velodyne-laserscan \
+    ros-${ROS_DISTRO}-velodyne-msgs \
+    ros-${ROS_DISTRO}-velodyne-pointcloud
+
+RUN rosdep init || echo "rosdep already initialized"
+
+################
+# RobotXR ROS packages
+################
+ 
+# Copy the libuvc directory from your host to the Docker image
+COPY dependencies/libuvc /libuvc
+
+# Build and install libuvc from the copied source
+RUN cd /libuvc && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make && \
+    make install
+
+# Update the library path
+ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+
+# Aruco prerequisites
+
+RUN apt-get update && \
+    pip3 install opencv-contrib-python transforms3d && \
+    pip3 install scikit-fuzzy networkx 
+
+# NodeRed
+
+RUN apt-get install -y \
+    python3-msgpack \
+    python3-paho-mqtt \
+    python3-gridfs \
+    python-pymongo-doc
+
+# Instalação do Mosquitto e o Mosquitto Client para MQTT
+RUN apt-get update && \
+    apt-get install -y mosquitto mosquitto-clients
+
+# Instale o Node.js (necessário para o Node-RED)
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs
+
+# Instale o Node-RED globalmente
+RUN npm install -g --unsafe-perm node-red
+
+# Instale o pacote mqtt-bridge para comunicação MQTT com o Node-RED
+RUN npm install -g mqtt-bridge
+
+# Instale as bibliotecas adicionais para o processamento de imagem
+RUN npm install -g sharp jimp
+
+#Instalação de nós do NodeRed
+RUN npm install -g node-red-dashboard node-red-contrib-image-tools node-red-node-ui-table
+
+# Instalação de dependências Python
+RUN pip3 install --no-cache-dir \
+    inject>=4.0 \
+    msgpack-python>=0.4.8 \
+    paho-mqtt>=1.2 \
+    pymongo \
+    pyyaml
+
+# Increase the memory of node.js
+
+ENV NODE_OPTIONS="--max-old-space-size=8192"
+
+# Code Style formating
+
+RUN apt-get update && \
+    pip install pylint
+
+# Standard init procedure
+
+ENV DEBIAN_FRONTEND=
+
+ENV TURTLEBOT_3D_SENSOR=astra_pro
+ENV TURTLEBOT_3D_SENSOR2=none
+ENV TURTLEBOT_BATTERY=none
+ENV TURTLEBOT_STACKS=interbotix
+ENV TURTLEBOT_BASE=kobuki
+ENV TURTLEBOT_ARM=none
+ENV TURTLEBOT_SERIAL_PORT=/dev/kobuki
+ENV TURTLEBOT_LIDAR_SENSOR=rplidar_a3
+
+RUN usermod -aG video $USERNAME
+
+################
+# Colcon Build RobotXR - Build inside dockerfile to assure integration
+# Temporary solution. This build and test will be moved to CI.
+################
+RUN apt-get update && apt-get install -y --no-install-recommends apt-utils && \
+    apt-get -y autoremove && \
+    apt-get -y clean
+
+# Copy the ROS workspace into the container
+COPY . .
+
+# Copying x64 to arm64 just for completeness.
+COPY robotxr_ws/src/External_Packages/ros2_astra_camera/astra_camera/openni2_redist/x64 \
+    robotxr_ws/src/External_Packages/ros2_astra_camera/astra_camera/openni2_redist/arm64
+
+RUN rm -rf robotxr_ws/install robotxr_ws/build robotxr_ws/log
+
+RUN apt-get update -y && \
+    apt-get upgrade -y
+
+RUN rosdep init || echo "rosdep already initialized" && \
+    sudo rosdep fix-permissions && \
+    rosdep update && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /robotxr/robotxr_ws
+
+RUN apt-get update && \
+    rosdep update && \
+    rosdep install --from-paths src --ignore-src -r -y
+
+# Insufficient memory in x86 to build workspace
+# RUN apt-get update && \
+#     rm -rf build/ install/ log/ && \
+#     . /opt/ros/${ROS_DISTRO}/setup.sh && \
+#     colcon build --symlink-install --executor sequential \
+#     --parallel-workers 1 --cmake-args -DCMAKE_BUILD_TYPE=Release
+
+CMD ["bash"]
+
+#### Complete for AI Test
+# Test AI modules
+FROM smart-factory-jetson as robotxr-humble-complete-jetson
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install common programs and dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    gcc \
+    libgl1-mesa-dev \
+    libsm6 \
+    mono-mcs \
+    python3-opencv \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip
+RUN python3 -m pip install --upgrade pip
+
+COPY robotxr-ai/ /robotxr/robotxr-ai/
+
+WORKDIR /robotxr/robotxr-ai
+
+# Python Env
+RUN apt-get update && apt-get install -y \
+    python3.10-venv && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN rm -rf venv app/build app/install app/log && \
+    python3 -m venv venv --system-site-packages --symlinks && \
+    touch venv/COLCON_IGNORE
+
+RUN apt-get update
+
+RUN bash -i -c "source venv/bin/activate && \
+    pip3 install -r /robotxr/robotxr-ai/app/src/image_processor/image_processor/requirements.txt \
+    && deactivate"
+
+ENV PYTHONPATH=/robotxr/robotxr-ai/venv/lib/python3.10/site-packages:$PYTHONPATH
+ENV PATH=/robotxr/robotxr-ai/venv/bin:$PATH    
+
+# Insufficient memory in x86 to build workspace
+# RUN bash -i -c "source venv/bin/activate && \
+#     cd /robotxr/robotxr-ai/app && \
+#     rosdep update && \
+#     rosdep install --from-paths src --ignore-src -r -y && \
+#     colcon build --symlink-install --executor sequential --parallel-workers 1 && \
+#     deactivate"
+
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+CMD ["bash"]

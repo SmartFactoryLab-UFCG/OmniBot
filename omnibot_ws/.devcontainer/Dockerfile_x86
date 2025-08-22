@@ -1,0 +1,242 @@
+#############################################
+# Created from template athackst.humble.Dockerfile
+#############################################
+
+FROM ubuntu:22.04 as smart-factory
+
+# Avoid warnings by switching to noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install language
+RUN apt-get update && apt-get install -y \
+  locales \
+  && locale-gen en_US.UTF-8 \
+  && update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 \
+  && rm -rf /var/lib/apt/lists/*
+ENV LANG en_US.UTF-8
+
+# Install timezone
+RUN ln -fs /usr/share/zoneinfo/UTC /etc/localtime \
+  && export DEBIAN_FRONTEND=noninteractive \
+  && apt-get update \
+  && apt-get install -y tzdata \
+  && dpkg-reconfigure --frontend noninteractive tzdata \
+  && rm -rf /var/lib/apt/lists/*
+
+# Install common programs
+RUN apt-get update && apt-get install -y \
+    bash-completion \
+    build-essential \
+    cmake \
+    curl \
+    evince \
+    gdb \
+    git \
+    gnupg2 \
+    htop \
+    iftop \
+    iproute2 \
+    iputils-ping \
+    lsb-release \
+    nano \
+    net-tools \
+    openssh-client \
+    psmisc \
+    python3-argcomplete \
+    python3-pip \
+    software-properties-common \
+    sudo \
+    traceroute \
+    terminator \
+    vim \
+    wget \
+    xterm \
+    wireless-tools \
+    libserial-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Environment variables for ROS 2
+ENV ROS_DISTRO=humble
+ENV AMENT_PREFIX_PATH=/opt/ros/${ROS_DISTRO}
+ENV COLCON_PREFIX_PATH=/opt/ros/${ROS_DISTRO}
+ENV LD_LIBRARY_PATH=/opt/ros/${ROS_DISTRO}/lib
+ENV PATH=/opt/ros/${ROS_DISTRO}/bin:$PATH
+ENV PYTHONPATH=/opt/ros/${ROS_DISTRO}/lib/python3.10/site-packages
+ENV ROS_PYTHON_VERSION=3
+ENV ROS_VERSION=2
+
+# Install ROS2
+RUN sudo add-apt-repository universe \
+  && curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg \
+  && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null \
+  && apt-get update && apt-get install -y --no-install-recommends \
+    ros-${ROS_DISTRO}-desktop \
+    ros-dev-tools \
+  && rm -rf /var/lib/apt/lists/*
+
+# Install ROS2 common packages
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    ament-cmake \
+    ament-lint \
+    ros-${ROS_DISTRO}-ecl-build \
+    ros-${ROS_DISTRO}-ecl-command-line \
+    ros-${ROS_DISTRO}-ecl-concepts \
+    ros-${ROS_DISTRO}-ecl-config \
+    ros-${ROS_DISTRO}-ecl-console \
+    ros-${ROS_DISTRO}-ecl-containers \
+    ros-${ROS_DISTRO}-ecl-converters \
+    ros-${ROS_DISTRO}-ecl-devices \
+    ros-${ROS_DISTRO}-ecl-eigen \
+    ros-${ROS_DISTRO}-ecl-errors \
+    ros-${ROS_DISTRO}-ecl-exceptions \
+    ros-${ROS_DISTRO}-ecl-formatters \
+    ros-${ROS_DISTRO}-ecl-geometry \
+    ros-${ROS_DISTRO}-ecl-license \
+    ros-${ROS_DISTRO}-ecl-linear-algebra \
+    ros-${ROS_DISTRO}-ecl-math \
+    ros-${ROS_DISTRO}-ecl-mobile-robot \
+    ros-${ROS_DISTRO}-ecl-mpl \
+    ros-${ROS_DISTRO}-ecl-sigslots \
+    ros-${ROS_DISTRO}-ecl-streams \
+    ros-${ROS_DISTRO}-ecl-threads \
+    ros-${ROS_DISTRO}-ecl-time \
+    ros-${ROS_DISTRO}-ecl-time-lite \
+    ros-${ROS_DISTRO}-ecl-type-traits \
+    ros-${ROS_DISTRO}-ecl-utilities \
+    ros-${ROS_DISTRO}-gazebo-ros \
+    ros-${ROS_DISTRO}-gazebo-plugins \
+    ros-${ROS_DISTRO}-imu-filter-madgwick \
+    ros-${ROS_DISTRO}-kobuki-core \
+    ros-${ROS_DISTRO}-kobuki-ros-interfaces \
+    ros-${ROS_DISTRO}-kobuki-velocity-smoother \
+    ros-${ROS_DISTRO}-joint-state-publisher-gui \
+    ros-${ROS_DISTRO}-ros-gz \
+    ros-${ROS_DISTRO}-ros-testing \
+    ros-${ROS_DISTRO}-sophus \
+    ros-${ROS_DISTRO}-ros2-control \
+    ros-${ROS_DISTRO}-ros2-controllers \
+    ros-${ROS_DISTRO}-ign-ros2-control \
+    yocs* && \
+    apt-get clean
+
+RUN rosdep init || echo "rosdep already initialized"
+
+ARG USERNAME=smart-factory
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+
+# Create a non-root user
+RUN groupadd --gid $USER_GID $USERNAME \
+  && useradd -s /bin/bash --uid $USER_UID --gid $USER_GID -m $USERNAME \
+  # Add sudo support for the non-root user
+  && apt-get update \
+  && apt-get install -y sudo \
+  && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME\
+  && chmod 0440 /etc/sudoers.d/$USERNAME \
+  && rm -rf /var/lib/apt/lists/*
+
+# Set up autocompletion for user
+RUN apt-get install -y git-core \
+  && echo "if [ -f /opt/ros/${ROS_DISTRO}/setup.bash ]; then source /opt/ros/${ROS_DISTRO}/setup.bash; fi" >> /home/$USERNAME/.bashrc \
+  && echo "if [ -f /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash ]; then source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash; fi" >> /home/$USERNAME/.bashrc
+
+################
+# Expose the nvidia driver to allow opengl 
+# Dependencies for glvnd and X11.
+################
+RUN apt-get update && apt-get install -y -qq --no-install-recommends \
+    libegl1 \
+    libglvnd0 \
+    libglx0 \
+    libgl1 \
+    libxext6 \
+    libx11-6
+
+# Env vars for the nvidia-container-runtime.
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES graphics,utility,compute
+ENV QT_X11_NO_MITSHM 1
+
+RUN apt-get install -y \
+    ros-${ROS_DISTRO}-test-msgs \
+    ros-${ROS_DISTRO}-fastrtps ros-${ROS_DISTRO}-rmw-fastrtps-cpp \
+    ros-${ROS_DISTRO}-cyclonedds ros-${ROS_DISTRO}-rmw-cyclonedds-cpp
+
+# Vision prerequisites
+RUN apt-get install -y \
+    ros-${ROS_DISTRO}-camera-info-manager \
+    ros-${ROS_DISTRO}-cv-bridge \
+    ros-${ROS_DISTRO}-image-publisher \
+    ros-${ROS_DISTRO}-image-transport \
+    ros-${ROS_DISTRO}-image-transport-plugins \ 
+    ros-${ROS_DISTRO}-pcl-ros \
+    ros-${ROS_DISTRO}-point-cloud-transport \ 
+    ros-${ROS_DISTRO}-point-cloud-transport-plugins \
+    ros-${ROS_DISTRO}-realsense2-camera
+
+# Behavior Tree prerequisites
+RUN apt-get install -y \
+    ros-${ROS_DISTRO}-behaviortree-cpp \
+    ros-${ROS_DISTRO}-generate-parameter-library
+
+# Aruco prerequisites
+RUN pip3 install \
+    opencv-contrib-python \
+    transforms3d
+
+RUN apt-get install -y \
+    ros-${ROS_DISTRO}-plotjuggler-ros \
+    ros-${ROS_DISTRO}-tf-transformations
+
+RUN pip3 install scikit-fuzzy networkx
+
+# Navigation prerequisites
+RUN apt-get install -y \
+    ros-${ROS_DISTRO}-grid-map-ros \
+    ros-${ROS_DISTRO}-gtsam \
+    ros-${ROS_DISTRO}-libg2o \
+    ros-${ROS_DISTRO}-libpointmatcher \
+    ros-${ROS_DISTRO}-nav2-bringup \
+    ros-${ROS_DISTRO}-nav2-msgs \
+    ros-${ROS_DISTRO}-octomap-msgs \
+    ros-${ROS_DISTRO}-twist-mux \
+    ros-${ROS_DISTRO}-robot-localization \
+    ros-${ROS_DISTRO}-urg-node \
+    ros-${ROS_DISTRO}-velodyne
+
+RUN pip install opencv-python
+
+# Instalação de dependências de sistema e pacotes ROS
+RUN apt-get install -y \
+    ros-${ROS_DISTRO}-rosbridge-library
+
+# Code Style formating
+RUN pip install pylint && \
+    rm -rf /var/lib/apt/lists/*
+
+# Instalação de dependências Python
+RUN pip3 install --no-cache-dir \
+    inject>=4.0 \
+    msgpack-python>=0.4.8 \
+    paho-mqtt>=1.2 \
+    pymongo \
+    pyyaml
+
+# Python Env
+RUN apt-get update && apt-get install -y \
+    python3.10-venv && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN echo "source /opt/ros/$ROS_DISTRO/setup.bash" >> /root/.bashrc
+
+RUN usermod -aG video $USERNAME
+
+COPY entrypoint.sh /setup/entrypoint.sh
+
+ENTRYPOINT ["/bin/bash", "/setup/entrypoint.sh"]
+
+ENV DEBIAN_FRONTEND=
+
+CMD ["bash"]

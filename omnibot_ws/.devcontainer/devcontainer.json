@@ -1,0 +1,62 @@
+// See https://aka.ms/vscode-remote/devcontainer.json for format details.
+{
+    "context": "../",
+	"build": {
+		"args": {
+			"WORKSPACE": "${containerWorkspaceFolder}"
+		},
+		"target": "smart-factory"
+	},
+    "dockerFile": "Dockerfile_x86",
+    // This will launch the container as a non-root user
+    "remoteUser" : "smart-factory",
+    "runArgs": [
+        // This will allow you to use a ptrace-based debugger like C++, Go, and Rust.
+        "--cap-add=SYS_PTRACE",
+        "--security-opt", "seccomp=unconfined",
+        "--network=host",
+        "--ipc=host",
+		"--privileged",
+		// "--gpus", "all",
+        "--volume=/tmp/.X11-unix:/tmp/.X11-unix:rw",
+		"--name=smart-factory",
+        "--device=/dev/dri",
+		"--device=/dev/bus/usb/001",
+		"--device=/dev/ttyACM0",
+		"-v", "/var/run/wpa_supplicant:/var/run/wpa_supplicant",
+        "-v", "/sys/class/net:/sys/class/net"
+       // "--device=/dev/video0:/dev/video0"
+    ],
+	"containerEnv": {
+		"QT_X11_NO_MITSHM": "1",
+		"DISPLAY": "${localEnv:DISPLAY}", // Needed for GUI try ":0" for windows
+		"WAYLAND_DISPLAY": "${localEnv:WAYLAND_DISPLAY}",
+		"XDG_RUNTIME_DIR": "${localEnv:XDG_RUNTIME_DIR}",
+		"PULSE_SERVER": "${localEnv:PULSE_SERVER}",
+		"LIBGL_ALWAYS_SOFTWARE": "1" // Needed for software rendering of opengl
+	},
+	// "postStartCommand": "chmod +x ./startup-script.sh && ./startup-script.sh", #TODO
+    // Set *default* container specific settings.json values on container create.
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"althack.ament-task-provider",
+				"betwo.b2-catkin-tools",
+				"DotJoshJohnson.xml",
+				"microhobby.bitbake2",
+				"ms-azuretools.vscode-docker",
+				"ms-iot.vscode-ros",
+				"ms-python.python",
+				"ms-python.pylint",
+				"ms-vscode.cpptools",
+				"ms-vscode.cmake-tools",
+				"redhat.vscode-yaml",
+				"smilerobotics.urdf",
+				"streetsidesoftware.code-spell-checker",
+				"twxs.cmake",
+				"yzhang.markdown-all-in-one",
+				"zachflower.uncrustify"
+			]
+		}
+	}
+}
