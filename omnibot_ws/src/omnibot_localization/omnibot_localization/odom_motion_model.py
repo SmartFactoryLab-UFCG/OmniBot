@@ -40,10 +40,10 @@ class OdometryMotionModel(Node):
         self.is_first_odom = True
 
         self.declare_parameter('alpha1', 0.01)
-        self.declare_parameter('alpha2', 0.005)
+        self.declare_parameter('alpha2', 0.01)
         self.declare_parameter('alpha3', 0.01)
-        self.declare_parameter('alpha4', 0.005)
-        self.declare_parameter('nr_samples', 150)
+        self.declare_parameter('alpha4', 0.01)
+        self.declare_parameter('nr_samples', 30)
 
         self.alpha1 = self.get_parameter('alpha1').get_parameter_value().double_value
         self.alpha2 = self.get_parameter('alpha2').get_parameter_value().double_value
@@ -71,7 +71,7 @@ class OdometryMotionModel(Node):
         
         # --- [ALTERAÇÃO] Conversão de Quaternião para Euler com Scipy ---
         rot = R.from_quat(q)
-        roll, pitch, yaw = rot.as_euler('xyz') # 'xyz' corresponde a roll, pitch, yaw
+        _, _, yaw = rot.as_euler('xyz') # 'xyz' corresponde a roll, pitch, yaw
 
         if self.is_first_odom:
             self.samples.header.frame_id = odom.header.frame_id
