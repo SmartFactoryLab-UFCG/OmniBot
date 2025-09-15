@@ -1,4 +1,4 @@
-/**:
+controller_manager:
   ros__parameters:
     update_rate: 50
     joint_state_broadcaster:
@@ -8,7 +8,11 @@
 
 omni_wheel_controller:
   ros__parameters:
+    cmd_vel_timeout: 0.5
+    
     joints:
       - omni_wheel_joint_1
       - omni_wheel_joint_2
       - omni_wheel_joint_3
+    
+    
