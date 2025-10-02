@@ -13,7 +13,7 @@ def generate_launch_description():
 
     map_name_arg = DeclareLaunchArgument(
         "map_name",
-        default_value="smart_with_base"
+        default_value="smart_rotated_180"
     )
     use_sim_time_arg = DeclareLaunchArgument(
         "use_sim_time",
