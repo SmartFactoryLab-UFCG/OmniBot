@@ -7,8 +7,8 @@
                 double radius = 11.524932098388671
             }
             dictionary Perspective = {
-                double3 position = (13.76032594341952, -2.656853981219526, 9.664017000778294)
-                double3 target = (-0.43519301197921045, -0.8491214452430784, 2.338739218052038)
+                double3 position = (12.794379842723126, -2.5338452909620726, 9.165562274820472)
+                double3 target = (-0.4351930119792051, -0.8491214452430804, 2.3387392180520425)
             }
             dictionary Right = {
                 double3 position = (0, -5, 0)
@@ -119,7 +119,7 @@ def "Render" (
                 bool omni:rtx:dlss:frameGeneration = 0
                 string omni:rtx:material:db:rtSensorNameToIdMap = "DefaultMaterial:0;AsphaltStandardMaterial:1;AsphaltWeatheredMaterial:2;VegetationGrassMaterial:3;WaterStandardMaterial:4;GlassStandardMaterial:5;FiberGlassMaterial:6;MetalAlloyMaterial:7;MetalAluminumMaterial:8;MetalAluminumOxidizedMaterial:9;PlasticStandardMaterial:10;RetroMarkingsMaterial:11;RetroSignMaterial:12;RubberStandardMaterial:13;SoilClayMaterial:14;ConcreteRoughMaterial:15;ConcreteSmoothMaterial:16;OakTreeBarkMaterial:17;FabricStandardMaterial:18;PlexiGlassStandardMaterial:19;MetalSilverMaterial:20"
                 bool omni:rtx:material:db:syncLoads = 1
-                token omni:rtx:post:aa:op = "taa"
+                token omni:rtx:post:aa:op
                 token omni:rtx:post:dlss:execMode = "performance"
                 bool omni:rtx:post:registeredCompositing:invertColorCorrection = 1
                 bool omni:rtx:post:registeredCompositing:invertToneMap = 1
@@ -4285,6 +4285,36 @@ def OmniGraph "ActionGraph_odom" (
         custom string outputs:qosProfile
         uniform token ui:nodegraph:node:expansionState = "open"
         uniform float2 ui:nodegraph:node:pos = (-542.58594, 524.5837)
+    }
+
+    def OmniGraphNode "ros2_publish_raw_transform_tree_01" (
+        prepend apiSchemas = ["NodeGraphNodeAPI"]
+    )
+    {
+        custom string inputs:childFrameId = "odom"
+        custom uint64 inputs:context
+        prepend uint64 inputs:context.connect = </ActionGraph_odom/ros2_context.outputs:context>
+        custom uint inputs:execIn (
+            customData = {
+                bool isExecution = 1
+            }
+        )
+        prepend uint inputs:execIn.connect = </ActionGraph_odom/on_playback_tick.outputs:tick>
+        custom string inputs:nodeNamespace
+        custom string inputs:parentFrameId = "map"
+        custom string inputs:qosProfile
+        prepend string inputs:qosProfile.connect = </ActionGraph_odom/ros2_qos_profile.outputs:qosProfile>
+        custom uint64 inputs:queueSize
+        custom quatd inputs:rotation
+        custom bool inputs:staticPublisher
+        custom double inputs:timeStamp
+        prepend double inputs:timeStamp.connect = </ActionGraph_odom/isaac_read_simulation_time.outputs:simulationTime>
+        custom string inputs:topicName
+        custom vector3d inputs:translation
+        token node:type = "isaacsim.ros2.bridge.ROS2PublishRawTransformTree"
+        int node:typeVersion = 1
+        uniform token ui:nodegraph:node:expansionState = "open"
+        uniform float2 ui:nodegraph:node:pos = (572.82623, 732.67004)
     }
 }
 
