@@ -21,7 +21,7 @@ public:
   ~OmnibotInterface();
 
   // Métodos da interface SystemInterface que estamos a sobrepor
-  CallbackReturn on_init(const hardware_interface::HardwareInfo& hardware_info) override;
+  CallbackReturn on_init(const hardware_interface::HardwareComponentInterfaceParams& params) override;
   std::vector<hardware_interface::StateInterface> export_state_interfaces() override;
   std::vector<hardware_interface::CommandInterface> export_command_interfaces() override;
   CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;

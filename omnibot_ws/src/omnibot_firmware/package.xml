@@ -1,21 +1,23 @@
 <?xml version="1.0"?>
-<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>omnibot_firmware</name>
-  <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="mateus.oliveira@ee.ufcg.edu.br">mateus</maintainer>
-  <license>TODO: License declaration</license>
+  <version>0.1.0</version>
+  <description>Omnidirectional robot hardware interface for ROS 2 Jazzy.</description>
 
+  <maintainer email="mateus.oliveira@ee.ufcg.edu.br">Mateus Oliveira</maintainer>
+  <license>MIT</license>
+
+  <!-- Build tool -->
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <!-- Core dependencies -->
   <depend>rclcpp</depend>
-  <depend>std_msgs</depend>
-  <depend>libserial-dev</depend>
-  <depend>hardware_interface</depend>
   <depend>rclcpp_lifecycle</depend>
+  <depend>hardware_interface</depend>
   <depend>pluginlib</depend>
+  <depend>libserial-dev</depend>
 
+  <!-- Test dependencies -->
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 

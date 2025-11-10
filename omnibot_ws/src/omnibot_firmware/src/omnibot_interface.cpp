@@ -29,30 +29,38 @@ namespace omnibot_firmware // Novo namespace
   }
 
   // Inicializar comunicação com porta serial
-  CallbackReturn OmnibotInterface::on_init(const hardware_interface::HardwareInfo& hardware_info) 
+  CallbackReturn OmnibotInterface::on_init(
+  const hardware_interface::HardwareComponentInterfaceParams& params)
+{
+  // Call the base class init
+  if (hardware_interface::SystemInterface::on_init(params) != CallbackReturn::SUCCESS)
   {
-    if (hardware_interface::SystemInterface::on_init(hardware_info) != CallbackReturn::SUCCESS)
-    {
-      return CallbackReturn::FAILURE;
-    }
-
-    try
-    {
-      port_ = info_.hardware_parameters.at("port");
-    }
-    catch (const std::out_of_range& e)
-    {
-      RCLCPP_FATAL(rclcpp::get_logger("OmnibotInterface"), "Nenhuma Porta Serial fornecida! Abortando execução");
-      return CallbackReturn::FAILURE;
-    }
-
-    // Inicializa os vetores do tamanho para três juntas
-    velocity_commands_.resize(info_.joints.size(), 0.0);
-    position_states_.resize(info_.joints.size(), 0.0);
-    velocity_states_.resize(info_.joints.size(), 0.0);
-
-    return CallbackReturn::SUCCESS;
+    return CallbackReturn::FAILURE;
   }
+
+  // Store hardware info from params
+  info_ = params.hardware_info;
+
+  try
+  {
+    port_ = info_.hardware_parameters.at("port");
+  }
+  catch (const std::out_of_range& e)
+  {
+    RCLCPP_FATAL(
+      rclcpp::get_logger("OmnibotInterface"),
+      "Nenhuma Porta Serial fornecida! Abortando execução");
+    return CallbackReturn::FAILURE;
+  }
+
+  velocity_commands_.resize(info_.joints.size(), 0.0);
+  position_states_.resize(info_.joints.size(), 0.0);
+  velocity_states_.resize(info_.joints.size(), 0.0);
+
+  return CallbackReturn::SUCCESS;
+}
+
+
 
   // Exportar estado atual de state_interface (velocidade e posição)
   std::vector<hardware_interface::StateInterface> OmnibotInterface::export_state_interfaces() 

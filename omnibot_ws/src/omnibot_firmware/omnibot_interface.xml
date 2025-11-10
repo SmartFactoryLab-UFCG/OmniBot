@@ -1,9 +1,10 @@
 <library path="omnibot_firmware">
-    <class name="omnibot_firmware/OmnibotInterface"
-      type="omnibot_firmware::OmnibotInterface"
-      base_class_type="hardware_interface::SystemInterface">
-      <description>
-        Omnibot Hardware Interface
-      </description>
-    </class>
-  </library>
+  <class
+    name="omnibot_firmware/OmnibotInterface"
+    type="omnibot_firmware::OmnibotInterface"
+    base_class_type="hardware_interface::SystemInterface">
+    <description>
+      Omnibot Hardware Interface plugin for ROS 2 Jazzy (ros2_control v3)
+    </description>
+  </class>
+</library>
