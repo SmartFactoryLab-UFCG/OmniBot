@@ -23,6 +23,9 @@ RUN apt-get update && apt-get install -y \
     python3-vcstool \
     python3-numpy \
     python3-opencv \
+    python3-scipy \
+    python3-serial \
+    python3-pyyaml
     libserial-dev \
     ros-${ROS_DISTRO}-rclcpp \
     ros-${ROS_DISTRO}-rclpy \
@@ -45,13 +48,6 @@ RUN apt-get update && apt-get install -y \
     ros-${ROS_DISTRO}-xacro \
 
     && rm -rf /var/lib/apt/lists/*
-
-# 4. Upgrade pip and install Python packages used by OmniBot
-RUN pip3 install --no-cache-dir \
-    python3-numpy \
-    python3-scipy \
-    python3-serial \
-    python3-pyyaml
 
 # 5. Initialize rosdep
 RUN rosdep init && rosdep update
