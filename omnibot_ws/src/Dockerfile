@@ -45,11 +45,10 @@ RUN apt-get update && apt-get install -y \
     ros-${ROS_DISTRO}-rviz2 \
     ros-${ROS_DISTRO}-robot-state-publisher \
     ros-${ROS_DISTRO}-xacro \
-
     && rm -rf /var/lib/apt/lists/*
 
 # 5. Initialize rosdep
-RUN rosdep init && rosdep update
+RUN rosdep update
 
 # 6. Create workspace and clone OmniBot repository
 WORKDIR /root/omnibot_ws/src
