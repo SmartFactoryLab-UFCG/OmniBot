@@ -25,7 +25,6 @@ RUN apt-get update && apt-get install -y \
     python3-opencv \
     python3-scipy \
     python3-serial \
-    python3-pyyaml \
     libserial-dev \
     ros-${ROS_DISTRO}-rclcpp \
     ros-${ROS_DISTRO}-rclpy \
