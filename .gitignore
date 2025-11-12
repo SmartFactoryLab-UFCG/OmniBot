@@ -1,8 +1,8 @@
 # ROS build and log files
-build
-devel
-install
-log
+build/
+devel/
+install/
+log/
 
 # Catkin tools
 .catkin_tools/
