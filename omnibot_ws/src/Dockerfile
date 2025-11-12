@@ -48,12 +48,10 @@ RUN apt-get update && apt-get install -y \
 
 # 4. Upgrade pip and install Python packages used by OmniBot
 RUN pip3 install --no-cache-dir \
-    numpy \
-    scipy \
-    matplotlib \
-    transforms3d \
-    serial \
-    pyyaml
+    python3-numpy \
+    python3-scipy \
+    python3-serial \
+    python3-pyyaml
 
 # 5. Initialize rosdep
 RUN rosdep init && rosdep update
