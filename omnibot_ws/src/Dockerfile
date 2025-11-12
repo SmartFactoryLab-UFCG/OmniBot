@@ -56,7 +56,9 @@ RUN git clone https://github.com/SmartFactoryLab-UFCG/OmniBot.git
 
 # 7. Install dependencies via rosdep
 WORKDIR /root/omnibot_ws
-RUN rosdep install --from-paths src --ignore-src -r -y
+RUN rosdep install --from-paths src --ignore-src -r -y \
+    --skip-keys="twist_mux joint_state_publisher_gui"
+
 
 # 8. Build the workspace
 RUN . /opt/ros/${ROS_DISTRO}/setup.sh && \
